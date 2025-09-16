@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:Usershyuns.platformiopenvScriptsplatformio.exe test --environment native)",
+      "Bash(pio test:*)",
+      "Bash(platformio test:*)",
+      "Bash(cmd /c \"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe test --environment native\")",
+      "Bash(powershell:*)",
+      "Bash(del C:BalanceBottesttest_kalman_filter.c)",
+      "Bash(del C:BalanceBottesttest_pid_controller.c)",
+      "Bash(del C:BalanceBottesttest_main.c)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
