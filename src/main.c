@@ -3,9 +3,12 @@
 #include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
+
+#include "config.h"
 
 #include "input/imu_sensor.h"
 #include "logic/kalman_filter.h"
@@ -16,29 +19,22 @@
 #include "logic/pid_controller.h"
 #include "output/servo_standup.h"
 
-// Pin definitions for ESP32-S3
-#define MPU6050_SDA         GPIO_NUM_21
-#define MPU6050_SCL         GPIO_NUM_20
-
-#define GPS_RX              GPIO_NUM_16
-#define GPS_TX              GPIO_NUM_17
-
-#define LEFT_MOTOR_A        GPIO_NUM_4
-#define LEFT_MOTOR_B        GPIO_NUM_5
-#define LEFT_MOTOR_EN       GPIO_NUM_6
-#define LEFT_ENC_A          GPIO_NUM_7
-#define LEFT_ENC_B          GPIO_NUM_15
-
-#define RIGHT_MOTOR_A       GPIO_NUM_8
-#define RIGHT_MOTOR_B       GPIO_NUM_9
-#define RIGHT_MOTOR_EN      GPIO_NUM_10
-#define RIGHT_ENC_A         GPIO_NUM_11
-#define RIGHT_ENC_B         GPIO_NUM_12
-
-#define SERVO_PIN           GPIO_NUM_18
-#define SERVO_CHANNEL       LEDC_CHANNEL_2
+// Pin definitions are now in config.h
 
 static const char* TAG = "BALANCE_ROBOT";
+
+// Robot state machine
+typedef enum {
+    ROBOT_STATE_INIT,
+    ROBOT_STATE_IDLE,
+    ROBOT_STATE_BALANCING,
+    ROBOT_STATE_STANDING_UP,
+    ROBOT_STATE_FALLEN,
+    ROBOT_STATE_ERROR
+} robot_state_t;
+
+static robot_state_t current_state = ROBOT_STATE_INIT;
+static SemaphoreHandle_t state_mutex = NULL;
 
 // Robot components
 static imu_sensor_t imu;
@@ -52,10 +48,13 @@ static ble_controller_t ble_controller;
 static pid_controller_t balance_pid;
 static servo_standup_t servo_standup;
 
-// Robot state variables
+// Robot state variables (protected by mutex)
 static float filtered_angle = 0.0f;
 static float robot_velocity = 0.0f;
 static bool balancing_enabled = true;
+
+// Mutex for protecting shared data
+static SemaphoreHandle_t data_mutex = NULL;
 
 // Task handles
 static TaskHandle_t balance_task_handle = NULL;
@@ -70,9 +69,32 @@ static void status_task(void *pvParameters);
 static void update_motors(float motor_output, remote_command_t cmd);
 static void handle_remote_commands(void);
 
+// Thread-safe data access functions
+static float get_filtered_angle(void);
+static void set_filtered_angle(float angle);
+static float get_robot_velocity(void);
+static void set_robot_velocity(float velocity);
+static bool get_balancing_enabled(void);
+static void set_balancing_enabled(bool enabled);
+
+// State machine functions
+static robot_state_t get_robot_state(void);
+static void set_robot_state(robot_state_t new_state);
+static const char* get_state_name(robot_state_t state);
+static void state_machine_update(void);
+
 void app_main(void) {
     ESP_LOGI(TAG, "Balance Robot Starting...");
-    
+
+    // Create mutexes for data protection
+    data_mutex = xSemaphoreCreateMutex();
+    state_mutex = xSemaphoreCreateMutex();
+    if (data_mutex == NULL || state_mutex == NULL) {
+        ESP_LOGE(TAG, "Failed to create mutexes!");
+        while(1) vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    ESP_LOGI(TAG, "Mutexes created");
+
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -83,7 +105,9 @@ void app_main(void) {
     
     // Initialize robot components
     initialize_robot();
-    
+
+    // Set initial state to idle after successful initialization
+    set_robot_state(ROBOT_STATE_IDLE);
     ESP_LOGI(TAG, "Robot initialized successfully!");
     
     // Create tasks
@@ -112,7 +136,7 @@ static void initialize_robot(void) {
     esp_err_t ret;
     
     // Initialize MPU6050
-    ret = imu_sensor_init(&imu, I2C_NUM_0, MPU6050_SDA, MPU6050_SCL);
+    ret = imu_sensor_init(&imu, CONFIG_MPU6050_I2C_PORT, CONFIG_MPU6050_SDA_PIN, CONFIG_MPU6050_SCL_PIN);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize MPU6050!");
         while(1) vTaskDelay(pdMS_TO_TICKS(1000));
@@ -125,7 +149,7 @@ static void initialize_robot(void) {
     ESP_LOGI(TAG, "Kalman filter initialized");
     
     // Initialize GPS
-    ret = gps_sensor_init(&gps, UART_NUM_2, GPS_TX, GPS_RX, 9600);
+    ret = gps_sensor_init(&gps, CONFIG_GPS_UART_PORT, CONFIG_GPS_TX_PIN, CONFIG_GPS_RX_PIN, CONFIG_GPS_BAUDRATE);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize GPS!");
     } else {
@@ -133,24 +157,24 @@ static void initialize_robot(void) {
     }
     
     // Initialize motors
-    ret = encoder_sensor_init(&left_encoder, LEFT_ENC_A, LEFT_ENC_B, 360, 6.5f);
+    ret = encoder_sensor_init(&left_encoder, CONFIG_LEFT_ENC_A_PIN, CONFIG_LEFT_ENC_B_PIN, CONFIG_ENCODER_PPR, CONFIG_WHEEL_DIAMETER_CM);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize left encoder!");
         while(1) vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    ret = motor_control_init(&left_motor, LEFT_MOTOR_A, LEFT_MOTOR_B, LEFT_MOTOR_EN, LEDC_CHANNEL_0);
+    ret = motor_control_init(&left_motor, CONFIG_LEFT_MOTOR_A_PIN, CONFIG_LEFT_MOTOR_B_PIN, CONFIG_LEFT_MOTOR_EN_PIN, CONFIG_LEFT_MOTOR_CHANNEL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize left motor!");
     } else {
         ESP_LOGI(TAG, "Left motor initialized");
     }
     
-    ret = encoder_sensor_init(&right_encoder, RIGHT_ENC_A, RIGHT_ENC_B, 360, 6.5f);
+    ret = encoder_sensor_init(&right_encoder, CONFIG_RIGHT_ENC_A_PIN, CONFIG_RIGHT_ENC_B_PIN, CONFIG_ENCODER_PPR, CONFIG_WHEEL_DIAMETER_CM);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize right encoder!");
         while(1) vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    ret = motor_control_init(&right_motor, RIGHT_MOTOR_A, RIGHT_MOTOR_B, RIGHT_MOTOR_EN, LEDC_CHANNEL_1);
+    ret = motor_control_init(&right_motor, CONFIG_RIGHT_MOTOR_A_PIN, CONFIG_RIGHT_MOTOR_B_PIN, CONFIG_RIGHT_MOTOR_EN_PIN, CONFIG_RIGHT_MOTOR_CHANNEL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize right motor!");
     } else {
@@ -158,7 +182,7 @@ static void initialize_robot(void) {
     }
     
     // Initialize BLE
-    ret = ble_controller_init(&ble_controller, "BalanceBot");
+    ret = ble_controller_init(&ble_controller, CONFIG_BLE_DEVICE_NAME);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize BLE!");
     } else {
@@ -166,7 +190,7 @@ static void initialize_robot(void) {
     }
     
     // Initialize servo standup
-    ret = servo_standup_init(&servo_standup, SERVO_PIN, SERVO_CHANNEL, 90, 0);
+    ret = servo_standup_init(&servo_standup, CONFIG_SERVO_PIN, CONFIG_SERVO_CHANNEL, CONFIG_SERVO_EXTENDED_ANGLE, CONFIG_SERVO_RETRACTED_ANGLE);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize servo standup!");
     } else {
@@ -174,8 +198,8 @@ static void initialize_robot(void) {
     }
     
     // Initialize PID controllers
-    pid_controller_init(&balance_pid, 50.0f, 0.5f, 2.0f);
-    pid_controller_set_output_limits(&balance_pid, -255.0f, 255.0f);
+    pid_controller_init(&balance_pid, CONFIG_BALANCE_PID_KP, CONFIG_BALANCE_PID_KI, CONFIG_BALANCE_PID_KD);
+    pid_controller_set_output_limits(&balance_pid, CONFIG_PID_OUTPUT_MIN, CONFIG_PID_OUTPUT_MAX);
     ESP_LOGI(TAG, "PID controllers initialized");
 }
 
@@ -188,10 +212,10 @@ static void sensor_task(void *pvParameters) {
         if (ret == ESP_OK) {
             // Apply Kalman filter to pitch angle
             float dt = 0.02f; // 50Hz update rate
-            filtered_angle = kalman_filter_get_angle(&kalman_pitch, 
+            set_filtered_angle(kalman_filter_get_angle(&kalman_pitch, 
                                                    imu_sensor_get_pitch(&imu),
                                                    imu_sensor_get_gyro_y(&imu), 
-                                                   dt);
+                                                   dt));
         }
         
         // Update GPS
@@ -202,7 +226,7 @@ static void sensor_task(void *pvParameters) {
         encoder_sensor_update_speed(&right_encoder);
         
         // Calculate robot velocity (average of both wheels)
-        robot_velocity = (encoder_sensor_get_speed(&left_encoder) + encoder_sensor_get_speed(&right_encoder)) / 2.0f;
+        set_robot_velocity((encoder_sensor_get_speed(&left_encoder) + encoder_sensor_get_speed(&right_encoder)) / 2.0f);
         
         vTaskDelay(pdMS_TO_TICKS(20)); // 50Hz
     }
@@ -210,24 +234,49 @@ static void sensor_task(void *pvParameters) {
 
 static void balance_task(void *pvParameters) {
     ESP_LOGI(TAG, "Balance task started");
-    
+
     while (1) {
+        // Update state machine first
+        state_machine_update();
+
         remote_command_t cmd = ble_controller_get_command(&ble_controller);
-        
-        if (cmd.balance && balancing_enabled && !servo_standup_is_standing_up(&servo_standup)) {
-            // Set PID setpoint to maintain balance (0 degrees)
-            pid_controller_set_setpoint(&balance_pid, 0.0f);
-            
-            // Compute balance control
-            float motor_output = pid_controller_compute(&balance_pid, filtered_angle);
-            
-            // Apply motor commands
-            update_motors(motor_output, cmd);
-        } else {
-            // Stop motors if balancing is disabled or standing up
+        robot_state_t state = get_robot_state();
+
+        // Handle different robot states
+        switch (state) {
+        case ROBOT_STATE_IDLE:
+            // Stop motors and reset PID
             motor_control_stop(&left_motor);
             motor_control_stop(&right_motor);
             pid_controller_reset(&balance_pid);
+            break;
+
+        case ROBOT_STATE_BALANCING:
+            // Set PID setpoint to maintain balance (0 degrees)
+            pid_controller_set_setpoint(&balance_pid, CONFIG_BALANCE_ANGLE_TARGET);
+
+            // Compute balance control
+            float motor_output = pid_controller_compute(&balance_pid, get_filtered_angle());
+
+            // Apply motor commands
+            update_motors(motor_output, cmd);
+            break;
+
+        case ROBOT_STATE_STANDING_UP:
+            // Motors stopped during standup
+            motor_control_stop(&left_motor);
+            motor_control_stop(&right_motor);
+            pid_controller_reset(&balance_pid);
+            break;
+
+        case ROBOT_STATE_FALLEN:
+        case ROBOT_STATE_ERROR:
+        default:
+            // Emergency stop
+            motor_control_stop(&left_motor);
+            motor_control_stop(&right_motor);
+            pid_controller_reset(&balance_pid);
+            break;
         }
         
         vTaskDelay(pdMS_TO_TICKS(20)); // 50Hz control loop
@@ -242,7 +291,7 @@ static void status_task(void *pvParameters) {
         if (ble_controller_is_connected(&ble_controller)) {
             char status[128];
             snprintf(status, sizeof(status), "Angle:%.2f Vel:%.1f GPS:%s", 
-                    filtered_angle, robot_velocity, 
+                    get_filtered_angle(), get_robot_velocity(), 
                     gps_sensor_has_fix(&gps) ? "OK" : "NO");
             
             if (gps_sensor_has_fix(&gps)) {
@@ -257,7 +306,7 @@ static void status_task(void *pvParameters) {
         
         // Print debug info to serial
         ESP_LOGI(TAG, "Angle: %.2f | Velocity: %.2f | GPS: %s", 
-                filtered_angle, robot_velocity, 
+                get_filtered_angle(), get_robot_velocity(), 
                 gps_sensor_has_fix(&gps) ? "Valid" : "Invalid");
         
         if (gps_sensor_has_fix(&gps)) {
@@ -299,7 +348,144 @@ static void handle_remote_commands(void) {
         servo_standup_request_standup(&servo_standup);
         ble_controller_send_status(&ble_controller, "Standing up...");
     }
-    
+
     // Update balancing state
-    balancing_enabled = cmd.balance;
+    set_balancing_enabled(cmd.balance);
+}
+
+// Thread-safe data access functions
+static float get_filtered_angle(void) {
+    float angle = 0.0f;
+    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+        angle = filtered_angle;
+        xSemaphoreGive(data_mutex);
+    }
+    return angle;
+}
+
+static void set_filtered_angle(float angle) {
+    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+        filtered_angle = angle;
+        xSemaphoreGive(data_mutex);
+    }
+}
+
+static float get_robot_velocity(void) {
+    float velocity = 0.0f;
+    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+        velocity = robot_velocity;
+        xSemaphoreGive(data_mutex);
+    }
+    return velocity;
+}
+
+static void set_robot_velocity(float velocity) {
+    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+        robot_velocity = velocity;
+        xSemaphoreGive(data_mutex);
+    }
+}
+
+static bool get_balancing_enabled(void) {
+    bool enabled = false;
+    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+        enabled = balancing_enabled;
+        xSemaphoreGive(data_mutex);
+    }
+    return enabled;
+}
+
+static void set_balancing_enabled(bool enabled) {
+    if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
+        balancing_enabled = enabled;
+        xSemaphoreGive(data_mutex);
+    }
+}
+
+// State machine functions
+static robot_state_t get_robot_state(void) {
+    robot_state_t state = ROBOT_STATE_ERROR;
+    if (xSemaphoreTake(state_mutex, portMAX_DELAY) == pdTRUE) {
+        state = current_state;
+        xSemaphoreGive(state_mutex);
+    }
+    return state;
+}
+
+static void set_robot_state(robot_state_t new_state) {
+    if (xSemaphoreTake(state_mutex, portMAX_DELAY) == pdTRUE) {
+        if (current_state != new_state) {
+            ESP_LOGI(TAG, "State change: %s -> %s",
+                    get_state_name(current_state), get_state_name(new_state));
+            current_state = new_state;
+        }
+        xSemaphoreGive(state_mutex);
+    }
+}
+
+static const char* get_state_name(robot_state_t state) {
+    switch (state) {
+        case ROBOT_STATE_INIT: return "INIT";
+        case ROBOT_STATE_IDLE: return "IDLE";
+        case ROBOT_STATE_BALANCING: return "BALANCING";
+        case ROBOT_STATE_STANDING_UP: return "STANDING_UP";
+        case ROBOT_STATE_FALLEN: return "FALLEN";
+        case ROBOT_STATE_ERROR: return "ERROR";
+        default: return "UNKNOWN";
+    }
+}
+
+static void state_machine_update(void) {
+    robot_state_t current = get_robot_state();
+    float angle = get_filtered_angle();
+    remote_command_t cmd = ble_controller_get_command(&ble_controller);
+
+    // State transitions based on conditions
+    switch (current) {
+    case ROBOT_STATE_IDLE:
+        if (cmd.balance && !servo_standup_is_standing_up(&servo_standup)) {
+            set_robot_state(ROBOT_STATE_BALANCING);
+        } else if (cmd.standup) {
+            set_robot_state(ROBOT_STATE_STANDING_UP);
+        }
+        // Check if fallen (angle too large)
+        if (fabsf(angle) > CONFIG_FALLEN_ANGLE_THRESHOLD) {
+            set_robot_state(ROBOT_STATE_FALLEN);
+        }
+        break;
+
+    case ROBOT_STATE_BALANCING:
+        if (!cmd.balance) {
+            set_robot_state(ROBOT_STATE_IDLE);
+        } else if (cmd.standup) {
+            set_robot_state(ROBOT_STATE_STANDING_UP);
+        } else if (fabsf(angle) > 45.0f) {
+            set_robot_state(ROBOT_STATE_FALLEN);
+        }
+        break;
+
+    case ROBOT_STATE_STANDING_UP:
+        if (servo_standup_is_complete(&servo_standup)) {
+            set_robot_state(ROBOT_STATE_IDLE);
+        } else if (!servo_standup_is_standing_up(&servo_standup)) {
+            // Standup failed or cancelled
+            set_robot_state(ROBOT_STATE_IDLE);
+        }
+        break;
+
+    case ROBOT_STATE_FALLEN:
+        // Can only recover through standup
+        if (cmd.standup) {
+            set_robot_state(ROBOT_STATE_STANDING_UP);
+        }
+        break;
+
+    case ROBOT_STATE_ERROR:
+        // Manual recovery required - could add auto-recovery logic here
+        break;
+
+    default:
+        set_robot_state(ROBOT_STATE_ERROR);
+        break;
+    }
 }
