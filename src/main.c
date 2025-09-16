@@ -7,13 +7,14 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 
-#include "mpu6050_sensor.h"
-#include "kalman_filter.h"
-#include "gps_module.h"
-#include "motor_encoder.h"
-#include "ble_controller.h"
-#include "pid_controller.h"
-#include "servo_standup.h"
+#include "input/imu_sensor.h"
+#include "logic/kalman_filter.h"
+#include "input/gps_sensor.h"
+#include "input/encoder_sensor.h"
+#include "output/motor_control.h"
+#include "output/ble_controller.h"
+#include "logic/pid_controller.h"
+#include "output/servo_standup.h"
 
 // Pin definitions for ESP32-S3
 #define MPU6050_SDA         GPIO_NUM_21
@@ -40,13 +41,15 @@
 static const char* TAG = "BALANCE_ROBOT";
 
 // Robot components
-static mpu6050_sensor_t imu;
+static imu_sensor_t imu;
 static kalman_filter_t kalman_pitch;
-static gps_module_t gps;
-static motor_encoder_t left_motor;
-static motor_encoder_t right_motor;
+static gps_sensor_t gps;
+static encoder_sensor_t left_encoder;
+static motor_control_t left_motor;
+static encoder_sensor_t right_encoder;
+static motor_control_t right_motor;
 static ble_controller_t ble_controller;
-static balance_pid_t balance_pid;
+static pid_controller_t balance_pid;
 static servo_standup_t servo_standup;
 
 // Robot state variables
@@ -109,7 +112,7 @@ static void initialize_robot(void) {
     esp_err_t ret;
     
     // Initialize MPU6050
-    ret = mpu6050_sensor_init(&imu, I2C_NUM_0, MPU6050_SDA, MPU6050_SCL);
+    ret = imu_sensor_init(&imu, I2C_NUM_0, MPU6050_SDA, MPU6050_SCL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize MPU6050!");
         while(1) vTaskDelay(pdMS_TO_TICKS(1000));
@@ -122,7 +125,7 @@ static void initialize_robot(void) {
     ESP_LOGI(TAG, "Kalman filter initialized");
     
     // Initialize GPS
-    ret = gps_module_init(&gps, UART_NUM_2, GPS_TX, GPS_RX, 9600);
+    ret = gps_sensor_init(&gps, UART_NUM_2, GPS_TX, GPS_RX, 9600);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize GPS!");
     } else {
@@ -130,16 +133,24 @@ static void initialize_robot(void) {
     }
     
     // Initialize motors
-    ret = motor_encoder_init(&left_motor, LEFT_ENC_A, LEFT_ENC_B, 
-                            LEFT_MOTOR_A, LEFT_MOTOR_B, LEFT_MOTOR_EN, LEDC_CHANNEL_0, 360, 6.5f);
+    ret = encoder_sensor_init(&left_encoder, LEFT_ENC_A, LEFT_ENC_B, 360, 6.5f);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize left encoder!");
+        while(1) vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    ret = motor_control_init(&left_motor, LEFT_MOTOR_A, LEFT_MOTOR_B, LEFT_MOTOR_EN, LEDC_CHANNEL_0);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize left motor!");
     } else {
         ESP_LOGI(TAG, "Left motor initialized");
     }
     
-    ret = motor_encoder_init(&right_motor, RIGHT_ENC_A, RIGHT_ENC_B, 
-                            RIGHT_MOTOR_A, RIGHT_MOTOR_B, RIGHT_MOTOR_EN, LEDC_CHANNEL_1, 360, 6.5f);
+    ret = encoder_sensor_init(&right_encoder, RIGHT_ENC_A, RIGHT_ENC_B, 360, 6.5f);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize right encoder!");
+        while(1) vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    ret = motor_control_init(&right_motor, RIGHT_MOTOR_A, RIGHT_MOTOR_B, RIGHT_MOTOR_EN, LEDC_CHANNEL_1);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize right motor!");
     } else {
@@ -163,10 +174,8 @@ static void initialize_robot(void) {
     }
     
     // Initialize PID controllers
-    balance_pid_init(&balance_pid);
-    balance_pid_set_balance_tunings(&balance_pid, 50.0f, 0.5f, 2.0f);
-    balance_pid_set_velocity_tunings(&balance_pid, 1.0f, 0.1f, 0.0f);
-    balance_pid_set_max_tilt_angle(&balance_pid, 45.0f);
+    pid_controller_init(&balance_pid, 50.0f, 0.5f, 2.0f);
+    pid_controller_set_output_limits(&balance_pid, -255.0f, 255.0f);
     ESP_LOGI(TAG, "PID controllers initialized");
 }
 
@@ -175,25 +184,25 @@ static void sensor_task(void *pvParameters) {
     
     while (1) {
         // Update IMU
-        esp_err_t ret = mpu6050_sensor_update(&imu);
+        esp_err_t ret = imu_sensor_update(&imu);
         if (ret == ESP_OK) {
             // Apply Kalman filter to pitch angle
             float dt = 0.02f; // 50Hz update rate
             filtered_angle = kalman_filter_get_angle(&kalman_pitch, 
-                                                   mpu6050_sensor_get_pitch(&imu), 
-                                                   mpu6050_sensor_get_gyro_y(&imu), 
+                                                   imu_sensor_get_pitch(&imu),
+                                                   imu_sensor_get_gyro_y(&imu), 
                                                    dt);
         }
         
         // Update GPS
-        gps_module_update(&gps);
+        gps_sensor_update(&gps);
         
         // Update motor speeds
-        motor_encoder_update_speed(&left_motor);
-        motor_encoder_update_speed(&right_motor);
+        encoder_sensor_update_speed(&left_encoder);
+        encoder_sensor_update_speed(&right_encoder);
         
         // Calculate robot velocity (average of both wheels)
-        robot_velocity = (motor_encoder_get_speed(&left_motor) + motor_encoder_get_speed(&right_motor)) / 2.0f;
+        robot_velocity = (encoder_sensor_get_speed(&left_encoder) + encoder_sensor_get_speed(&right_encoder)) / 2.0f;
         
         vTaskDelay(pdMS_TO_TICKS(20)); // 50Hz
     }
@@ -206,22 +215,19 @@ static void balance_task(void *pvParameters) {
         remote_command_t cmd = ble_controller_get_command(&ble_controller);
         
         if (cmd.balance && balancing_enabled && !servo_standup_is_standing_up(&servo_standup)) {
-            // Set target velocity based on remote command
-            float target_vel = cmd.direction * cmd.speed * 0.5f; // Scale to reasonable velocity
-            balance_pid_set_target_velocity(&balance_pid, target_vel);
+            // Set PID setpoint to maintain balance (0 degrees)
+            pid_controller_set_setpoint(&balance_pid, 0.0f);
             
             // Compute balance control
-            float motor_output = balance_pid_compute_balance(&balance_pid, filtered_angle, 
-                                                           mpu6050_sensor_get_gyro_y(&imu), 
-                                                           robot_velocity);
+            float motor_output = pid_controller_compute(&balance_pid, filtered_angle);
             
             // Apply motor commands
             update_motors(motor_output, cmd);
         } else {
             // Stop motors if balancing is disabled or standing up
-            motor_encoder_stop(&left_motor);
-            motor_encoder_stop(&right_motor);
-            balance_pid_reset(&balance_pid);
+            motor_control_stop(&left_motor);
+            motor_control_stop(&right_motor);
+            pid_controller_reset(&balance_pid);
         }
         
         vTaskDelay(pdMS_TO_TICKS(20)); // 50Hz control loop
@@ -237,12 +243,12 @@ static void status_task(void *pvParameters) {
             char status[128];
             snprintf(status, sizeof(status), "Angle:%.2f Vel:%.1f GPS:%s", 
                     filtered_angle, robot_velocity, 
-                    gps_module_is_valid(&gps) ? "OK" : "NO");
+                    gps_sensor_has_fix(&gps) ? "OK" : "NO");
             
-            if (gps_module_is_valid(&gps)) {
+            if (gps_sensor_has_fix(&gps)) {
                 char gps_info[64];
                 snprintf(gps_info, sizeof(gps_info), " Lat:%.6f Lon:%.6f", 
-                        gps_module_get_latitude(&gps), gps_module_get_longitude(&gps));
+                        gps_sensor_get_latitude(&gps), gps_sensor_get_longitude(&gps));
                 strncat(status, gps_info, sizeof(status) - strlen(status) - 1);
             }
             
@@ -252,13 +258,13 @@ static void status_task(void *pvParameters) {
         // Print debug info to serial
         ESP_LOGI(TAG, "Angle: %.2f | Velocity: %.2f | GPS: %s", 
                 filtered_angle, robot_velocity, 
-                gps_module_is_valid(&gps) ? "Valid" : "Invalid");
+                gps_sensor_has_fix(&gps) ? "Valid" : "Invalid");
         
-        if (gps_module_is_valid(&gps)) {
+        if (gps_sensor_has_fix(&gps)) {
             ESP_LOGI(TAG, "GPS - Lat: %.6f | Lon: %.6f | Sats: %d", 
-                    gps_module_get_latitude(&gps), 
-                    gps_module_get_longitude(&gps),
-                    gps_module_get_satellites(&gps));
+                    gps_sensor_get_latitude(&gps), 
+                    gps_sensor_get_longitude(&gps),
+                    gps_sensor_get_satellites(&gps));
         }
         
         ESP_LOGI(TAG, "Standup: %s", servo_standup_is_standing_up(&servo_standup) ? "Active" : "Idle");
@@ -281,8 +287,8 @@ static void update_motors(float motor_output, remote_command_t cmd) {
     if (right_motor_speed < -255.0f) right_motor_speed = -255.0f;
     
     // Apply to motors
-    motor_encoder_set_speed(&left_motor, (int)left_motor_speed);
-    motor_encoder_set_speed(&right_motor, (int)right_motor_speed);
+    motor_control_set_speed(&left_motor, (int)left_motor_speed);
+    motor_control_set_speed(&right_motor, (int)right_motor_speed);
 }
 
 static void handle_remote_commands(void) {

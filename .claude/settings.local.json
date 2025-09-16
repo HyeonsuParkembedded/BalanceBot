@@ -8,7 +8,9 @@
       "Bash(powershell:*)",
       "Bash(del C:BalanceBottesttest_kalman_filter.c)",
       "Bash(del C:BalanceBottesttest_pid_controller.c)",
-      "Bash(del C:BalanceBottesttest_main.c)"
+      "Bash(del C:BalanceBottesttest_main.c)",
+      "Bash(dir:*)",
+      "Bash(cmd /c:*)"
     ],
     "deny": [],
     "ask": []

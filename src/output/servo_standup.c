@@ -1,12 +1,13 @@
 #include "servo_standup.h"
+#include "../bsw/pwm_driver.h"
 #ifndef NATIVE_BUILD
 #include "esp_log.h"
 #endif
 
 #ifndef NATIVE_BUILD
-static const char* TAG = "SERVO_STANDUP";
+static const char* SERVO_TAG = "SERVO_STANDUP";
 #else
-#define TAG "SERVO_STANDUP"
+#define SERVO_TAG "SERVO_STANDUP"
 #endif
 
 // Servo PWM constants
@@ -58,7 +59,7 @@ esp_err_t servo_standup_init(servo_standup_t* servo, gpio_num_t pin, ledc_channe
     };
     esp_err_t ret = ledc_timer_config(&ledc_timer);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure LEDC timer");
+        ESP_LOGE(SERVO_TAG, "Failed to configure LEDC timer");
         return ret;
     }
 
@@ -74,7 +75,7 @@ esp_err_t servo_standup_init(servo_standup_t* servo, gpio_num_t pin, ledc_channe
     };
     ret = ledc_channel_config(&ledc_channel);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure LEDC channel");
+        ESP_LOGE(SERVO_TAG, "Failed to configure LEDC channel");
         return ret;
     }
 
@@ -82,7 +83,7 @@ esp_err_t servo_standup_init(servo_standup_t* servo, gpio_num_t pin, ledc_channe
     servo_set_angle(servo, retract_angle);
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    ESP_LOGI(TAG, "Servo standup initialized");
+    ESP_LOGI(SERVO_TAG, "Servo standup initialized");
     return ESP_OK;
 }
 
@@ -98,7 +99,7 @@ void servo_standup_update(servo_standup_t* servo) {
         servo->standup_in_progress = true;
         servo->state = STANDUP_EXTENDING;
         servo->state_start_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
-        ESP_LOGI(TAG, "Starting standup sequence");
+        ESP_LOGI(SERVO_TAG, "Starting standup sequence");
     }
     
     if (!servo->standup_in_progress) return;
@@ -110,12 +111,12 @@ void servo_standup_update(servo_standup_t* servo) {
         case STANDUP_EXTENDING:
             if (elapsed_time == 0 || servo->current_angle != servo->extended_angle) {
                 servo_set_angle(servo, servo->extended_angle);
-                ESP_LOGI(TAG, "Extending servo to %d degrees", servo->extended_angle);
+                ESP_LOGI(SERVO_TAG, "Extending servo to %d degrees", servo->extended_angle);
             }
             if (elapsed_time >= servo->extend_duration) {
                 servo->state = STANDUP_PUSHING;
                 servo->state_start_time = current_time;
-                ESP_LOGI(TAG, "Holding position for push");
+                ESP_LOGI(SERVO_TAG, "Holding position for push");
             }
             break;
             
@@ -124,7 +125,7 @@ void servo_standup_update(servo_standup_t* servo) {
                 servo->state = STANDUP_RETRACTING;
                 servo->state_start_time = current_time;
                 servo_set_angle(servo, servo->retracted_angle);
-                ESP_LOGI(TAG, "Retracting servo to %d degrees", servo->retracted_angle);
+                ESP_LOGI(SERVO_TAG, "Retracting servo to %d degrees", servo->retracted_angle);
             }
             break;
             
@@ -132,7 +133,7 @@ void servo_standup_update(servo_standup_t* servo) {
             if (elapsed_time >= servo->retract_duration) {
                 servo->state = STANDUP_COMPLETE;
                 servo->state_start_time = current_time;
-                ESP_LOGI(TAG, "Standup sequence complete");
+                ESP_LOGI(SERVO_TAG, "Standup sequence complete");
             }
             break;
             
@@ -140,7 +141,7 @@ void servo_standup_update(servo_standup_t* servo) {
             if (elapsed_time >= 500) { // Wait 500ms before allowing next standup
                 servo->state = STANDUP_IDLE;
                 servo->standup_in_progress = false;
-                ESP_LOGI(TAG, "Ready for next standup");
+                ESP_LOGI(SERVO_TAG, "Ready for next standup");
             }
             break;
             
@@ -162,7 +163,7 @@ void servo_standup_reset(servo_standup_t* servo) {
     servo->standup_in_progress = false;
     servo->standup_requested = false;
     servo_set_angle(servo, servo->retracted_angle);
-    ESP_LOGI(TAG, "Servo standup reset");
+    ESP_LOGI(SERVO_TAG, "Servo standup reset");
 }
 
 void servo_standup_set_timings(servo_standup_t* servo, uint32_t extend, uint32_t push, uint32_t retract) {

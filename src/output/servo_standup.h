@@ -7,12 +7,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
-#else
-typedef int esp_err_t;
-typedef int gpio_num_t;
-typedef int ledc_channel_t;
-#define ESP_OK 0
-#define ESP_FAIL -1
 #endif
 #include <stdbool.h>
 
