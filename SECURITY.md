@@ -50,7 +50,7 @@ BalanceBot은 ESP32-S3 기반의 균형 로봇 프로젝트로, 다음과 같은
 보안 취약점을 발견하신 경우 다음 절차를 따라주세요:
 
 ### 신고 방법
-1. **GitHub Issues**: 일반적인 보안 이슈는 [GitHub Issues](https://github.com/your-repo/BalanceBot/issues)에 신고
+1. **GitHub Issues**: 일반적인 보안 이슈는 [GitHub Issues](https://github.com/HyeonsuParkembedded/BalanceBot/issues)에 신고
 2. **긴급 취약점**: 심각한 보안 취약점은 비공개로 신고 권장
 
 ### 신고 시 포함할 정보
