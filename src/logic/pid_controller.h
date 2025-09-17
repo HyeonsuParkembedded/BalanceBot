@@ -1,8 +1,12 @@
 #ifndef PID_CONTROLLER_H
 #define PID_CONTROLLER_H
 
+#ifndef NATIVE_BUILD
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#else
+#include <stdint.h>
+#endif
 #include <stdbool.h>
 
 #ifdef __cplusplus

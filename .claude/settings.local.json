@@ -10,7 +10,13 @@
       "Bash(del C:BalanceBottesttest_pid_controller.c)",
       "Bash(del C:BalanceBottesttest_main.c)",
       "Bash(dir:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" test --environment native)",
+      "Bash(del testtest_core_logic.c)",
+      "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" clean)",
+      "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" run --target clean)",
+      "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" test --environment native --filter test_balance_bot)",
+      "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" run)"
     ],
     "deny": [],
     "ask": []

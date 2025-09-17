@@ -7,8 +7,12 @@
 #include "esp_err.h"
 #else
 typedef int esp_err_t;
+#ifndef GPIO_NUM_T_DEFINED
 typedef int gpio_num_t;
+#endif
+#ifndef LEDC_CHANNEL_T_DEFINED
 typedef int ledc_channel_t;
+#endif
 #define ESP_OK 0
 #define ESP_FAIL -1
 #endif

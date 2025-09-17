@@ -46,8 +46,9 @@ esp_err_t ble_controller_init(ble_controller_t* ble, const char* device_name);
 void ble_controller_update(ble_controller_t* ble);
 remote_command_t ble_controller_get_command(ble_controller_t* ble);
 bool ble_controller_is_connected(ble_controller_t* ble);
-esp_err_t ble_controller_send_status(ble_controller_t* ble, const char* status);
-void ble_controller_parse_command(ble_controller_t* ble, const char* command);
+esp_err_t ble_controller_send_status(ble_controller_t* ble, float angle, float velocity, float battery_voltage);
+esp_err_t ble_controller_process_packet(ble_controller_t* ble, const uint8_t* data, size_t length);
+void ble_controller_parse_command(ble_controller_t* ble, const char* command); // Legacy function
 
 #ifdef __cplusplus
 }

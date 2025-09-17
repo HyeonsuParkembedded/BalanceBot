@@ -1,10 +1,35 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#ifndef NATIVE_BUILD
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "driver/i2c.h"
 #include "driver/uart.h"
+#else
+// Native build - mock ESP32 types
+#ifndef GPIO_NUM_T_DEFINED
+#define GPIO_NUM_T_DEFINED
+typedef enum {
+    GPIO_NUM_0 = 0,
+    GPIO_NUM_1, GPIO_NUM_2, GPIO_NUM_3, GPIO_NUM_4, GPIO_NUM_5,
+    GPIO_NUM_6, GPIO_NUM_7, GPIO_NUM_8, GPIO_NUM_9, GPIO_NUM_10,
+    GPIO_NUM_11, GPIO_NUM_12, GPIO_NUM_15, GPIO_NUM_16, GPIO_NUM_17,
+    GPIO_NUM_18, GPIO_NUM_20, GPIO_NUM_21
+} gpio_num_t;
+#endif
+
+#ifndef LEDC_CHANNEL_T_DEFINED
+#define LEDC_CHANNEL_T_DEFINED
+typedef enum {
+    I2C_NUM_0 = 0,
+    UART_NUM_2 = 2,
+    LEDC_CHANNEL_0 = 0,
+    LEDC_CHANNEL_1 = 1,
+    LEDC_CHANNEL_2 = 2
+} ledc_channel_t;
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +97,8 @@ extern "C" {
 // State machine thresholds
 #define CONFIG_FALLEN_ANGLE_THRESHOLD   45.0f
 #define CONFIG_BALANCE_ANGLE_TARGET     0.0f
+#define CONFIG_STANDUP_ANGLE_TOLERANCE  5.0f
+#define CONFIG_RECOVERY_TIMEOUT_MS      30000
 
 // Servo parameters
 #define CONFIG_SERVO_EXTENDED_ANGLE     90

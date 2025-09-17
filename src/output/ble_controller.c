@@ -1,4 +1,5 @@
 #include "ble_controller.h"
+#include "../system/protocol.h"
 #ifndef NATIVE_BUILD
 #include "esp_log.h"
 #endif
@@ -80,16 +81,88 @@ bool ble_controller_is_connected(ble_controller_t* ble) {
     return ble->device_connected;
 }
 
-esp_err_t ble_controller_send_status(ble_controller_t* ble, const char* status) {
+esp_err_t ble_controller_send_status(ble_controller_t* ble, float angle, float velocity, float battery_voltage) {
     if (!ble->device_connected) {
         return ESP_FAIL;
     }
     
-    ESP_LOGI(TAG, "Status: %s", status);
+    protocol_message_t msg;
+    static uint8_t seq_num = 0;
+    
+    // Build status response message
+    build_status_response(&msg, angle, velocity, 0x01, seq_num++);
+    
+    // Update battery level (convert voltage to percentage)
+    uint8_t battery_percentage = (uint8_t)((battery_voltage - 3.0f) / 1.2f * 100.0f);
+    if (battery_percentage > 100) battery_percentage = 100;
+    msg.payload.status_resp.battery_level = battery_percentage;
+    
+    // Encode message to buffer
+    uint8_t buffer[sizeof(protocol_message_t)];
+    int encoded_len = encode_message(&msg, buffer, sizeof(buffer));
+    
+    if (encoded_len <= 0) {
+        ESP_LOGE(TAG, "Failed to encode status message");
+        return ESP_FAIL;
+    }
+    
+    // Send binary packet via BLE (placeholder - actual BLE transmission would go here)
+    ESP_LOGI(TAG, "Sending status: angle=%.2f, vel=%.2f, battery=%d%%", 
+             angle, velocity, battery_percentage);
+    
     return ESP_OK;
 }
 
+esp_err_t ble_controller_process_packet(ble_controller_t* ble, const uint8_t* data, size_t length) {
+    protocol_message_t msg;
+    
+    int result = decode_message(data, (int)length, &msg);
+    if (result <= 0) {
+        ESP_LOGE(TAG, "Failed to decode message: %d", result);
+        return ESP_FAIL;
+    }
+    
+    if (!validate_message(&msg)) {
+        ESP_LOGE(TAG, "Message validation failed");
+        return ESP_FAIL;
+    }
+    
+    switch (msg.header.msg_type) {
+        case MSG_TYPE_MOVE_CMD: {
+            move_command_payload_t* cmd = &msg.payload.move_cmd;
+            
+            // Apply safety limits
+            ble->current_command.direction = (cmd->direction > 1) ? 1 : 
+                                           ((cmd->direction < -1) ? -1 : cmd->direction);
+            ble->current_command.turn = (cmd->turn > 100) ? 100 : 
+                                      ((cmd->turn < -100) ? -100 : cmd->turn);
+            ble->current_command.speed = (cmd->speed > 100) ? 100 : cmd->speed;
+            
+            // Extract flags
+            ble->current_command.balance = (cmd->flags & CMD_FLAG_BALANCE) != 0;
+            ble->current_command.standup = (cmd->flags & CMD_FLAG_STANDUP) != 0;
+            
+            ESP_LOGI(TAG, "Move command: dir=%d, turn=%d, speed=%d, balance=%s, standup=%s", 
+                     ble->current_command.direction, 
+                     ble->current_command.turn, 
+                     ble->current_command.speed,
+                     ble->current_command.balance ? "ON" : "OFF",
+                     ble->current_command.standup ? "YES" : "NO");
+            break;
+        }
+        
+        default:
+            ESP_LOGW(TAG, "Unknown message type: 0x%02x", msg.header.msg_type);
+            return ESP_ERR_NOT_SUPPORTED;
+    }
+    
+    return ESP_OK;
+}
+
+// Legacy function for backward compatibility
 void ble_controller_parse_command(ble_controller_t* ble, const char* command) {
+    ESP_LOGW(TAG, "Using deprecated string command parsing: %s", command);
+    
     if (strncmp(command, "MOVE:", 5) == 0) {
         int dir, turn, speed;
         if (sscanf(command + 5, "%d,%d,%d", &dir, &turn, &speed) == 3) {
@@ -110,7 +183,4 @@ void ble_controller_parse_command(ble_controller_t* ble, const char* command) {
     } else if (strcmp(command, "STANDUP_DONE") == 0) {
         ble->current_command.standup = false;
     }
-    
-    strncpy(ble->last_command, command, sizeof(ble->last_command) - 1);
-    ble->last_command[sizeof(ble->last_command) - 1] = '\0';
 }

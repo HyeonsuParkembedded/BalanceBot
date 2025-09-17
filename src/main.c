@@ -18,6 +18,7 @@
 #include "output/ble_controller.h"
 #include "logic/pid_controller.h"
 #include "output/servo_standup.h"
+#include "system/error_recovery.h"
 
 // Pin definitions are now in config.h
 
@@ -91,7 +92,8 @@ void app_main(void) {
     state_mutex = xSemaphoreCreateMutex();
     if (data_mutex == NULL || state_mutex == NULL) {
         ESP_LOGE(TAG, "Failed to create mutexes!");
-        while(1) vTaskDelay(pdMS_TO_TICKS(1000));
+        set_robot_state(ROBOT_STATE_ERROR);
+        esp_restart();
     }
     ESP_LOGI(TAG, "Mutexes created");
 
@@ -132,75 +134,81 @@ void app_main(void) {
     }
 }
 
+// Component initialization wrapper functions
+static esp_err_t init_imu_wrapper(void) {
+    return imu_sensor_init(&imu, CONFIG_MPU6050_I2C_PORT, CONFIG_MPU6050_SDA_PIN, CONFIG_MPU6050_SCL_PIN);
+}
+
+static esp_err_t init_left_encoder_wrapper(void) {
+    return encoder_sensor_init(&left_encoder, CONFIG_LEFT_ENC_A_PIN, CONFIG_LEFT_ENC_B_PIN, CONFIG_ENCODER_PPR, CONFIG_WHEEL_DIAMETER_CM);
+}
+
+static esp_err_t init_right_encoder_wrapper(void) {
+    return encoder_sensor_init(&right_encoder, CONFIG_RIGHT_ENC_A_PIN, CONFIG_RIGHT_ENC_B_PIN, CONFIG_ENCODER_PPR, CONFIG_WHEEL_DIAMETER_CM);
+}
+
+static esp_err_t init_gps_wrapper(void) {
+    return gps_sensor_init(&gps, CONFIG_GPS_UART_PORT, CONFIG_GPS_TX_PIN, CONFIG_GPS_RX_PIN, CONFIG_GPS_BAUDRATE);
+}
+
+static esp_err_t init_ble_wrapper(void) {
+    return ble_controller_init(&ble_controller, CONFIG_BLE_DEVICE_NAME);
+}
+
+static esp_err_t init_servo_wrapper(void) {
+    return servo_standup_init(&servo_standup, CONFIG_SERVO_PIN, CONFIG_SERVO_CHANNEL, CONFIG_SERVO_EXTENDED_ANGLE, CONFIG_SERVO_RETRACTED_ANGLE);
+}
+
 static void initialize_robot(void) {
-    esp_err_t ret;
+    // Initialize error recovery system
+    error_recovery_init();
     
-    // Initialize MPU6050
-    ret = imu_sensor_init(&imu, CONFIG_MPU6050_I2C_PORT, CONFIG_MPU6050_SDA_PIN, CONFIG_MPU6050_SCL_PIN);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize MPU6050!");
-        while(1) vTaskDelay(pdMS_TO_TICKS(1000));
+    // Define component configurations
+    component_info_t components[] = {
+        {"IMU_Sensor", init_imu_wrapper, COMPONENT_CRITICAL, false, 0},
+        {"Left_Encoder", init_left_encoder_wrapper, COMPONENT_CRITICAL, false, 0},
+        {"Right_Encoder", init_right_encoder_wrapper, COMPONENT_CRITICAL, false, 0},
+        {"GPS_Sensor", init_gps_wrapper, COMPONENT_OPTIONAL, false, 0},
+        {"BLE_Controller", init_ble_wrapper, COMPONENT_IMPORTANT, false, 0},
+        {"Servo_Standup", init_servo_wrapper, COMPONENT_IMPORTANT, false, 0}
+    };
+    
+    int num_components = sizeof(components) / sizeof(components[0]);
+    
+    // Initialize each component with retry logic
+    for (int i = 0; i < num_components; i++) {
+        initialize_component_with_retry(&components[i]);
     }
-    ESP_LOGI(TAG, "MPU6050 initialized");
     
     // Initialize Kalman filter
     kalman_filter_init(&kalman_pitch);
     kalman_filter_set_angle(&kalman_pitch, 0.0f);
     ESP_LOGI(TAG, "Kalman filter initialized");
     
-    // Initialize GPS
-    ret = gps_sensor_init(&gps, CONFIG_GPS_UART_PORT, CONFIG_GPS_TX_PIN, CONFIG_GPS_RX_PIN, CONFIG_GPS_BAUDRATE);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize GPS!");
-    } else {
-        ESP_LOGI(TAG, "GPS initialized");
-    }
-    
-    // Initialize motors
-    ret = encoder_sensor_init(&left_encoder, CONFIG_LEFT_ENC_A_PIN, CONFIG_LEFT_ENC_B_PIN, CONFIG_ENCODER_PPR, CONFIG_WHEEL_DIAMETER_CM);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize left encoder!");
-        while(1) vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-    ret = motor_control_init(&left_motor, CONFIG_LEFT_MOTOR_A_PIN, CONFIG_LEFT_MOTOR_B_PIN, CONFIG_LEFT_MOTOR_EN_PIN, CONFIG_LEFT_MOTOR_CHANNEL);
+    // Initialize motors (these are always critical)
+    esp_err_t ret = motor_control_init(&left_motor, CONFIG_LEFT_MOTOR_A_PIN, CONFIG_LEFT_MOTOR_B_PIN, CONFIG_LEFT_MOTOR_EN_PIN, CONFIG_LEFT_MOTOR_CHANNEL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize left motor!");
-    } else {
-        ESP_LOGI(TAG, "Left motor initialized");
+        enter_safe_mode();
+        return;
     }
+    ESP_LOGI(TAG, "Left motor initialized");
     
-    ret = encoder_sensor_init(&right_encoder, CONFIG_RIGHT_ENC_A_PIN, CONFIG_RIGHT_ENC_B_PIN, CONFIG_ENCODER_PPR, CONFIG_WHEEL_DIAMETER_CM);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize right encoder!");
-        while(1) vTaskDelay(pdMS_TO_TICKS(1000));
-    }
     ret = motor_control_init(&right_motor, CONFIG_RIGHT_MOTOR_A_PIN, CONFIG_RIGHT_MOTOR_B_PIN, CONFIG_RIGHT_MOTOR_EN_PIN, CONFIG_RIGHT_MOTOR_CHANNEL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize right motor!");
-    } else {
-        ESP_LOGI(TAG, "Right motor initialized");
+        enter_safe_mode();
+        return;
     }
-    
-    // Initialize BLE
-    ret = ble_controller_init(&ble_controller, CONFIG_BLE_DEVICE_NAME);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize BLE!");
-    } else {
-        ESP_LOGI(TAG, "BLE initialized");
-    }
-    
-    // Initialize servo standup
-    ret = servo_standup_init(&servo_standup, CONFIG_SERVO_PIN, CONFIG_SERVO_CHANNEL, CONFIG_SERVO_EXTENDED_ANGLE, CONFIG_SERVO_RETRACTED_ANGLE);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize servo standup!");
-    } else {
-        ESP_LOGI(TAG, "Servo standup initialized");
-    }
+    ESP_LOGI(TAG, "Right motor initialized");
     
     // Initialize PID controllers
     pid_controller_init(&balance_pid, CONFIG_BALANCE_PID_KP, CONFIG_BALANCE_PID_KI, CONFIG_BALANCE_PID_KD);
     pid_controller_set_output_limits(&balance_pid, CONFIG_PID_OUTPUT_MIN, CONFIG_PID_OUTPUT_MAX);
     ESP_LOGI(TAG, "PID controllers initialized");
+    
+    // Log system health after initialization
+    log_system_health();
 }
 
 static void sensor_task(void *pvParameters) {
@@ -301,7 +309,11 @@ static void status_task(void *pvParameters) {
                 strncat(status, gps_info, sizeof(status) - strlen(status) - 1);
             }
             
-            ble_controller_send_status(&ble_controller, status);
+            // Send structured status data instead of string
+            float angle = get_filtered_angle();
+            float velocity = get_robot_velocity();
+            float battery_voltage = 3.7f; // TODO: Read actual battery voltage
+            ble_controller_send_status(&ble_controller, angle, velocity, battery_voltage);
         }
         
         // Print debug info to serial
@@ -346,7 +358,11 @@ static void handle_remote_commands(void) {
     // Handle standup command
     if (cmd.standup && !servo_standup_is_standing_up(&servo_standup)) {
         servo_standup_request_standup(&servo_standup);
-        ble_controller_send_status(&ble_controller, "Standing up...");
+        // Send status with standup indication via system_status field
+        float angle = get_filtered_angle();
+        float velocity = get_robot_velocity(); 
+        float battery_voltage = 3.7f; // TODO: Read actual battery voltage
+        ble_controller_send_status(&ble_controller, angle, velocity, battery_voltage);
     }
 
     // Update balancing state
@@ -459,7 +475,7 @@ static void state_machine_update(void) {
             set_robot_state(ROBOT_STATE_IDLE);
         } else if (cmd.standup) {
             set_robot_state(ROBOT_STATE_STANDING_UP);
-        } else if (fabsf(angle) > 45.0f) {
+        } else if (fabsf(angle) > CONFIG_FALLEN_ANGLE_THRESHOLD) {
             set_robot_state(ROBOT_STATE_FALLEN);
         }
         break;
