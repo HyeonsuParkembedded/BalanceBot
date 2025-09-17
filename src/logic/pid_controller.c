@@ -1,5 +1,4 @@
 #include "pid_controller.h"
-#include <math.h>
 #include <string.h>
 
 void pid_controller_init(pid_controller_t* pid, float Kp, float Ki, float Kd) {
@@ -12,7 +11,6 @@ void pid_controller_init(pid_controller_t* pid, float Kp, float Ki, float Kd) {
     pid->output = 0.0f;
     pid->output_min = -255.0f;
     pid->output_max = 255.0f;
-    pid->last_time = 0;
     pid->first_run = true;
 }
 
@@ -37,31 +35,22 @@ void pid_controller_set_output_limits(pid_controller_t* pid, float min, float ma
     else if (pid->integral < pid->output_min) pid->integral = pid->output_min;
 }
 
-float pid_controller_compute(pid_controller_t* pid, float input) {
-#ifdef NATIVE_BUILD
-    static uint32_t tick = 0;
-    uint32_t now = ++tick;
-#else
-    uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
-#endif
-    
+float pid_controller_compute(pid_controller_t* pid, float input, float dt) {
     if (pid->first_run) {
-        pid->last_time = now;
         pid->previous_error = pid->setpoint - input;
         pid->first_run = false;
         return 0.0f;
     }
-    
-    float time_change = (float)(now - pid->last_time) / 1000.0f;
-    if (time_change <= 0.0f) return pid->output;
+
+    if (dt <= 0.0f) return pid->output;
     
     float error = pid->setpoint - input;
     
-    pid->integral += error * time_change;
+    pid->integral += error * dt;
     if (pid->integral > pid->output_max) pid->integral = pid->output_max;
     else if (pid->integral < pid->output_min) pid->integral = pid->output_min;
-    
-    float derivative = (error - pid->previous_error) / time_change;
+
+    float derivative = (error - pid->previous_error) / dt;
     
     pid->output = pid->kp * error + pid->ki * pid->integral + pid->kd * derivative;
     
@@ -69,8 +58,7 @@ float pid_controller_compute(pid_controller_t* pid, float input) {
     else if (pid->output < pid->output_min) pid->output = pid->output_min;
     
     pid->previous_error = error;
-    pid->last_time = now;
-    
+
     return pid->output;
 }
 
@@ -109,16 +97,16 @@ void balance_pid_set_max_tilt_angle(balance_pid_t* balance_pid, float angle) {
     balance_pid->max_tilt_angle = angle;
 }
 
-float balance_pid_compute_balance(balance_pid_t* balance_pid, float current_angle, float gyro_rate, float current_velocity) {
-    if (fabsf(current_angle) > balance_pid->max_tilt_angle) {
+float balance_pid_compute_balance(balance_pid_t* balance_pid, float current_angle, float gyro_rate, float current_velocity, float dt) {
+    if ((current_angle > 0 ? current_angle : -current_angle) > balance_pid->max_tilt_angle) {
         return 0.0f; // Robot has fallen, stop motors
     }
-    
-    float velocity_adjustment = pid_controller_compute(&balance_pid->velocity_pid, current_velocity);
-    
+
+    float velocity_adjustment = pid_controller_compute(&balance_pid->velocity_pid, current_velocity, dt);
+
     pid_controller_set_setpoint(&balance_pid->pitch_pid, velocity_adjustment);
-    float motor_output = pid_controller_compute(&balance_pid->pitch_pid, current_angle);
-    
+    float motor_output = pid_controller_compute(&balance_pid->pitch_pid, current_angle, dt);
+
     return motor_output;
 }
 

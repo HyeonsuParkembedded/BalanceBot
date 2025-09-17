@@ -1,5 +1,6 @@
 #include "error_recovery.h"
 #include "config.h"
+#include <string.h>
 #ifndef NATIVE_BUILD
 #include "esp_log.h"
 #include "esp_system.h"

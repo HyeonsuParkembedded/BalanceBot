@@ -263,8 +263,9 @@ static void balance_task(void *pvParameters) {
             // Set PID setpoint to maintain balance (0 degrees)
             pid_controller_set_setpoint(&balance_pid, CONFIG_BALANCE_ANGLE_TARGET);
 
-            // Compute balance control
-            float motor_output = pid_controller_compute(&balance_pid, get_filtered_angle());
+            // Compute balance control (dt = 20ms = 0.02s for 50Hz update rate)
+            float dt = CONFIG_BALANCE_UPDATE_RATE / 1000.0f;
+            float motor_output = pid_controller_compute(&balance_pid, get_filtered_angle(), dt);
 
             // Apply motor commands
             update_motors(motor_output, cmd);
