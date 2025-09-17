@@ -86,4 +86,4 @@ pio test -e native -v
 
 ## 📜 라이선스
 
-이 프로젝트는 [MIT 라이선스](https://www.google.com/search?q=LICENSE)를 따릅니다.
+이 프로젝트는 [MIT 라이선스](LICENSE)를 따릅니다.
