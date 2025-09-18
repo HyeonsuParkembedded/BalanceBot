@@ -1,5 +1,4 @@
 {
-  "enableAllProjectMcpServers": true,
   "permissions": {
     "allow": [
       "Bash(C:Usershyuns.platformiopenvScriptsplatformio.exe test --environment native)",
@@ -18,9 +17,14 @@
       "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" run --target clean)",
       "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" test --environment native --filter test_balance_bot)",
       "Bash(\"C:\\Users\\hyuns\\.platformio\\penv\\Scripts\\platformio.exe\" run)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(flutter:*)",
+      "Bash(start ms-settings:developers)",
+      "Bash(nc:*)",
+      "Bash(copy:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true
 }
