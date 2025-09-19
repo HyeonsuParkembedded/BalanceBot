@@ -19,13 +19,14 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 android {
     namespace 'io.github.edufolly.flutterbluetoothserial'
-    compileSdkVersion 30
+    compileSdkVersion 36
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 21
+        targetSdkVersion 36
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     lintOptions {

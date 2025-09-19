@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:permission_handler/permission_handler.dart';
 import '../services/ble_service.dart';
 import '../models/balance_pid_settings.dart';
 import '../widgets/balance_pid_widget.dart';
@@ -74,15 +75,38 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 
   void _connectToRobot() async {
-    final success = await _bleService.connect();
-    if (!mounted) return;
-    setState(() {
-      _isConnected = success;
-    });
+    // Request Bluetooth permissions
+    if (await _requestBluetoothPermissions()) {
+      final success = await _bleService.connect();
+      if (!mounted) return;
+      setState(() {
+        _isConnected = success;
+      });
 
-    if (success) {
-      await _bleService.sendPidSettings(_pidSettings);
+      if (success) {
+        await _bleService.sendPidSettings(_pidSettings);
+      }
+    } else {
+      // Handle permission denial
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bluetooth permissions are required to connect.')),
+      );
     }
+  }
+
+  Future<bool> _requestBluetoothPermissions() async {
+    final Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothAdvertise,
+      Permission.bluetoothConnect,
+      Permission.location,
+    ].request();
+
+    return statuses[Permission.bluetoothScan] == PermissionStatus.granted &&
+        statuses[Permission.bluetoothAdvertise] == PermissionStatus.granted &&
+        statuses[Permission.bluetoothConnect] == PermissionStatus.granted &&
+        statuses[Permission.location] == PermissionStatus.granted;
   }
 
   void _disconnectFromRobot() async {
