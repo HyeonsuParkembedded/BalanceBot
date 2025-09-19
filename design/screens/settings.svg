@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="720" height="1280" viewBox="0 0 720 1280" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="1280" fill="#FFFFFF"/>
+  <text x="36" y="72" font-family="Inter, Arial" font-size="22" fill="#0F172A" font-weight="700">설정</text>
+  <text x="36" y="100" font-family="Inter" font-size="12" fill="#64748B">앱 동작과 로봇 관련 설정을 여기서 조정합니다.</text>
+
+  <!-- Settings list -->
+  <g transform="translate(20,140)">
+    <rect x="0" y="0" rx="10" width="680" height="72" fill="#FFFFFF" stroke="#E6EEF9"/>
+    <text x="16" y="44" font-family="Inter" font-size="16" fill="#0F172A">Units</text>
+    <text x="660" y="44" font-family="Inter" font-size="14" fill="#64748B" text-anchor="end">cm / s</text>
+  </g>
+
+  <g transform="translate(20,228)">
+    <rect x="0" y="0" rx="10" width="680" height="72" fill="#FFFFFF" stroke="#E6EEF9"/>
+    <text x="16" y="44" font-family="Inter" font-size="16" fill="#0F172A">Theme</text>
+    <text x="660" y="44" font-family="Inter" font-size="14" fill="#64748B" text-anchor="end">Light</text>
+  </g>
+
+  <g transform="translate(20,316)">
+    <rect x="0" y="0" rx="10" width="680" height="72" fill="#FFFFFF" stroke="#E6EEF9"/>
+    <text x="16" y="44" font-family="Inter" font-size="16" fill="#0F172A">Auto-connect</text>
+    <rect x="620" y="20" rx="16" width="64" height="32" fill="#E6EEF9"/>
+    <circle cx="644" cy="36" r="12" fill="#FFFFFF" stroke="#CBD5E1"/>
+  </g>
+
+  <g transform="translate(20,404)">
+    <rect x="0" y="0" rx="10" width="680" height="72" fill="#FFFFFF" stroke="#E6EEF9"/>
+    <text x="16" y="44" font-family="Inter" font-size="16" fill="#0F172A">App version</text>
+    <text x="660" y="44" font-family="Inter" font-size="14" fill="#64748B" text-anchor="end">v1.0.0</text>
+  </g>
+
+  <text x="36" y="1240" font-family="Arial" font-size="12" fill="#94A3B8">settings.svg — screen mockup</text>
+</svg>

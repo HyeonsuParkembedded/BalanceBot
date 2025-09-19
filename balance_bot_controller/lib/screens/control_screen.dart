@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import '../services/ble_service.dart';
 import '../models/balance_pid_settings.dart';
 import '../widgets/balance_pid_widget.dart';
-import '../widgets/connection_status_widget.dart';
-import '../widgets/robot_status_widget.dart';
-import '../widgets/robot_control_widget.dart';
-import '../widgets/rc_joystick_widget.dart';
 
 class ControlScreen extends StatefulWidget {
   const ControlScreen({super.key});
@@ -21,10 +16,6 @@ class _ControlScreenState extends State<ControlScreen> {
   BalancePidSettings _pidSettings = BalancePidSettings();
   bool _isConnected = false;
   bool _isRobotActive = false;
-  String _connectionStatus = "연결 안됨";
-  String _robotState = "IDLE";
-  double _currentAngle = 0.0;
-  double _currentVelocity = 0.0;
   int _batteryLevel = 0;
 
   // 조이스틱 상태 변수들
@@ -55,9 +46,8 @@ class _ControlScreenState extends State<ControlScreen> {
 
   void _setupBleCallbacks() {
     _bleService.onStatusReceived = (angle, velocity, batteryLevel) {
+      if (!mounted) return;
       setState(() {
-        _currentAngle = angle;
-        _currentVelocity = velocity;
         _batteryLevel = batteryLevel;
       });
     };
@@ -65,6 +55,7 @@ class _ControlScreenState extends State<ControlScreen> {
 
   void _loadPidSettings() async {
     final settings = await BalancePidSettings.load();
+    if (!mounted) return;
     setState(() {
       _pidSettings = settings;
     });
@@ -72,6 +63,7 @@ class _ControlScreenState extends State<ControlScreen> {
 
   void _updatePidSettings(BalancePidSettings newSettings) async {
     await newSettings.save();
+    if (!mounted) return;
     setState(() {
       _pidSettings = newSettings;
     });
@@ -82,36 +74,23 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 
   void _connectToRobot() async {
-    try {
-      setState(() {
-        _connectionStatus = "연결 중...";
-      });
+    final success = await _bleService.connect();
+    if (!mounted) return;
+    setState(() {
+      _isConnected = success;
+    });
 
-      final success = await _bleService.connect();
-      setState(() {
-        _isConnected = success;
-        _connectionStatus = success ? "연결됨" : "연결 실패";
-      });
-
-      if (success) {
-        await _bleService.sendPidSettings(_pidSettings);
-      }
-    } catch (e) {
-      setState(() {
-        _isConnected = false;
-        _connectionStatus = "연결 오류: ${e.toString()}";
-      });
+    if (success) {
+      await _bleService.sendPidSettings(_pidSettings);
     }
   }
 
   void _disconnectFromRobot() async {
     await _bleService.disconnect();
+    if (!mounted) return;
     setState(() {
       _isConnected = false;
-      _connectionStatus = "연결 안됨";
       _isRobotActive = false;
-      _currentAngle = 0.0;
-      _currentVelocity = 0.0;
       _batteryLevel = 0;
     });
   }
@@ -122,10 +101,12 @@ class _ControlScreenState extends State<ControlScreen> {
     try {
       final newState = !_isRobotActive;
       await _bleService.setBalanceMode(newState);
+      if (!mounted) return;
       setState(() {
         _isRobotActive = newState;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('로봇 상태 변경 실패: ${e.toString()}')),
       );
@@ -137,10 +118,12 @@ class _ControlScreenState extends State<ControlScreen> {
 
     try {
       await _bleService.requestStandup();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('기립 명령을 전송했습니다')),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('기립 명령 실패: ${e.toString()}')),
       );
@@ -196,7 +179,7 @@ class _ControlScreenState extends State<ControlScreen> {
         if (!_isConnected) return;
 
         final RenderBox renderBox = context.findRenderObject() as RenderBox;
-        final center = Offset(joystickSize / 2, joystickSize / 2);
+        const center = Offset(joystickSize / 2, joystickSize / 2);
         final localPosition = renderBox.globalToLocal(details.globalPosition);
 
         double deltaX = localPosition.dx - center.dx;
@@ -244,7 +227,7 @@ class _ControlScreenState extends State<ControlScreen> {
                   color: _isConnected ? Colors.blue : Colors.grey,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withAlpha(76),
                       blurRadius: 4,
                       offset: const Offset(2, 2),
                     ),
@@ -283,7 +266,7 @@ class _ControlScreenState extends State<ControlScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _isConnected ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                    color: _isConnected ? Colors.green.withAlpha(25) : Colors.grey.withAlpha(25),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: _isConnected ? Colors.green : Colors.grey,
@@ -309,11 +292,11 @@ class _ControlScreenState extends State<ControlScreen> {
                       if (_isConnected) ...[
                         const SizedBox(height: 4),
                         Text(
-                          _bleService.connectedDevice?.localName ?? "Unknown",
+                          _bleService.connectedDevice?.platformName ?? "Unknown",
                           style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                         Text(
-                          '배터리: ${_batteryLevel}%',
+                          '배터리: $_batteryLevel%',
                           style: const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
@@ -384,6 +367,7 @@ class _ControlScreenState extends State<ControlScreen> {
                 x: _singleJoystickX,
                 y: _singleJoystickY,
                 onUpdate: (x, y) {
+                  if (!mounted) return;
                   setState(() {
                     _singleJoystickX = x;
                     _singleJoystickY = y;
@@ -432,6 +416,7 @@ class _ControlScreenState extends State<ControlScreen> {
                       x: _leftJoystickX,
                       y: _leftJoystickY,
                       onUpdate: (x, y) {
+                        if (!mounted) return;
                         setState(() {
                           _leftJoystickX = x;
                           _leftJoystickY = y;
@@ -456,7 +441,7 @@ class _ControlScreenState extends State<ControlScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _isConnected ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                          color: _isConnected ? Colors.green.withAlpha(25) : Colors.grey.withAlpha(25),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: _isConnected ? Colors.green : Colors.grey,
@@ -482,11 +467,11 @@ class _ControlScreenState extends State<ControlScreen> {
                             if (_isConnected) ...[
                               const SizedBox(height: 4),
                               Text(
-                                _bleService.connectedDevice?.localName ?? "Unknown",
+                                _bleService.connectedDevice?.platformName ?? "Unknown",
                                 style: const TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                               Text(
-                                '배터리: ${_batteryLevel}%',
+                                '배터리: $_batteryLevel%',
                                 style: const TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                             ],
@@ -570,6 +555,7 @@ class _ControlScreenState extends State<ControlScreen> {
                       x: _rightJoystickX,
                       y: _rightJoystickY,
                       onUpdate: (x, y) {
+                        if (!mounted) return;
                         setState(() {
                           _rightJoystickX = x;
                           _rightJoystickY = y;

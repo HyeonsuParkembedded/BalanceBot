@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="180" height="56" viewBox="0 0 180 56" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" rx="12" ry="12" width="180" height="56" fill="#3B82F6"/>
+  <text x="90" y="36" font-family="Inter, Arial" font-size="16" fill="#FFFFFF" text-anchor="middle" font-weight="600">Primary</text>
+  <text x="6" y="52" font-family="Arial" font-size="9" fill="#94A3B8">button_primary.svg — component</text>
+</svg>

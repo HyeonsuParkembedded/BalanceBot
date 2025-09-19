@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="120" r="110" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="4"/>
+  <!-- subtle inner ring -->
+  <circle cx="120" cy="120" r="80" fill="none" stroke="#E6EEF9" stroke-width="2"/>
+  <text x="12" y="230" font-family="Arial" font-size="12" fill="#94A3B8">joystick_track.svg — layer</text>
+</svg>

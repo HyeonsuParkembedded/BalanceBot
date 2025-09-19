@@ -326,7 +326,7 @@ class _BalancePidWidgetState extends State<BalancePidWidget> with SingleTickerPr
             Tab(text: '속도 제어 (Velocity)'),
           ],
         ),
-        Container(
+        SizedBox(
           height: 300, // Fixed height instead of Expanded
           child: TabBarView(
             controller: _tabController,

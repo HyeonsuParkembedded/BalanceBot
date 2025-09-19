@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:http/http.dart' as http;
 import '../models/pid_settings.dart';
@@ -31,14 +30,13 @@ class CommunicationService {
 
       return false;
     } catch (e) {
-      print('Connection error: $e');
       return false;
     }
   }
 
   Future<bool> _connectBluetooth() async {
     try {
-      if (!await FlutterBluetoothSerial.instance.isEnabled) {
+      if (await FlutterBluetoothSerial.instance.isEnabled != true) {
         return false;
       }
 
@@ -60,7 +58,6 @@ class CommunicationService {
       _bluetoothConnection = await BluetoothConnection.toAddress(balanceBotDevice.address);
       return _bluetoothConnection?.isConnected ?? false;
     } catch (e) {
-      print('Bluetooth connection error: $e');
       return false;
     }
   }
@@ -91,7 +88,6 @@ class CommunicationService {
 
       return false;
     } catch (e) {
-      print('WiFi connection error: $e');
       return false;
     }
   }
@@ -106,7 +102,7 @@ class CommunicationService {
       _isConnected = false;
       _connectionType = CommunicationType.none;
     } catch (e) {
-      print('Disconnect error: $e');
+      // Disconnect error
     }
   }
 
@@ -127,7 +123,6 @@ class CommunicationService {
 
       return false;
     } catch (e) {
-      print('Send PID settings error: $e');
       return false;
     }
   }
@@ -149,7 +144,6 @@ class CommunicationService {
 
       return false;
     } catch (e) {
-      print('Set robot active error: $e');
       return false;
     }
   }
@@ -165,7 +159,6 @@ class CommunicationService {
       await _bluetoothConnection!.output.allSent;
       return true;
     } catch (e) {
-      print('Bluetooth send error: $e');
       return false;
     }
   }
@@ -182,7 +175,6 @@ class CommunicationService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('WiFi send error: $e');
       return false;
     }
   }

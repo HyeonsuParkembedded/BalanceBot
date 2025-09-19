@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="720" height="1280" viewBox="0 0 720 1280" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="1280" fill="#FFFFFF"/>
+  <text x="36" y="72" font-family="Inter, Arial" font-size="22" fill="#0F172A" font-weight="700">연결 가능한 기기</text>
+  <text x="36" y="100" font-family="Inter" font-size="12" fill="#64748B">주변 BLE 기기를 스캔하여 목록으로 표시합니다.</text>
+
+  <!-- Search bar -->
+  <g transform="translate(20,130)">
+    <rect x="0" y="0" rx="12" width="680" height="44" fill="#F1F5F9" stroke="#E6EEF9"/>
+    <text x="16" y="30" font-family="Inter" font-size="14" fill="#64748B">기기 검색</text>
+  </g>
+
+  <!-- Device list -->
+  <g transform="translate(20,194)">
+    <g transform="translate(0,0)">
+      <rect x="0" y="0" rx="12" width="680" height="92" fill="#FFFFFF" stroke="#E6EEF9"/>
+      <circle cx="56" cy="46" r="28" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+      <text x="108" y="40" font-family="Inter, Arial" font-size="16" fill="#0F172A" font-weight="600">BalanceBot-01</text>
+      <text x="108" y="60" font-family="Inter, Arial" font-size="12" fill="#64748B">RSSI: -62</text>
+      <rect x="552" y="32" rx="8" width="112" height="40" fill="#3B82F6"/>
+      <text x="608" y="58" font-family="Inter" font-size="14" fill="#FFFFFF" text-anchor="middle">연결</text>
+    </g>
+    <g transform="translate(0,112)">
+      <rect x="0" y="0" rx="12" width="680" height="92" fill="#FFFFFF" stroke="#E6EEF9"/>
+  <circle cx="56" cy="46" r="28" fill="#F8FAFC" stroke="#2563EB" stroke-width="2"/>
+      <text x="108" y="40" font-family="Inter, Arial" font-size="16" fill="#0F172A" font-weight="600">BalanceBot-02</text>
+      <text x="108" y="60" font-family="Inter, Arial" font-size="12" fill="#64748B">RSSI: -75</text>
+      <rect x="552" y="32" rx="8" width="112" height="40" fill="#10B981"/>
+      <text x="608" y="58" font-family="Inter" font-size="14" fill="#FFFFFF" text-anchor="middle">페어링</text>
+    </g>
+  </g>
+
+  <text x="36" y="1240" font-family="Arial" font-size="12" fill="#94A3B8">device_list.svg — screen mockup</text>
+</svg>

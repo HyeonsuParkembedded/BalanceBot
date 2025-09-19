@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'screens/control_screen.dart';
+import 'screens/control_screen_v2.dart';
+import 'utils/design_tokens.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,10 +23,11 @@ class BalanceBotApp extends StatelessWidget {
     return MaterialApp(
       title: 'Balance Bot Controller',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: DesignTokens.primary),
         useMaterial3: true,
+        fontFamily: DesignTokens.fontFamily,
       ),
-      home: const ControlScreen(),
+      home: const ControlScreenV2(),
       debugShowCheckedModeBanner: false, // 디버그 배너 제거
     );
   }

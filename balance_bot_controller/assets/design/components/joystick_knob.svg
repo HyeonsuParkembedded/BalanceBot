@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="knobShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <g filter="url(#knobShadow)">
+    <circle cx="32" cy="32" r="30" fill="#3B82F6"/>
+    <circle cx="32" cy="32" r="12" fill="#EFF6FF"/>
+  </g>
+  <text x="4" y="62" font-family="Arial" font-size="10" fill="#94A3B8">joystick_knob.svg — layer</text>
+</svg>

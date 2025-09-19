@@ -70,32 +70,27 @@ class ProtocolUtils {
 
   static Map<String, dynamic>? parseStatusResponse(Uint8List data) {
     if (data.length < 8) {
-      print("Status response too short: ${data.length} bytes");
       return null;
     }
 
     try {
       // Parse header
       if (data[0] != startMarker) {
-        print("Invalid start marker: ${data[0]}");
         return null;
       }
 
       int msgType = data[2];
       if (msgType != msgTypeStatusResp) {
-        print("Not a status response: $msgType");
         return null;
       }
 
       int payloadLen = (data[5] << 8) | data[4];
       if (data.length < 8 + payloadLen) {
-        print("Incomplete message: expected ${8 + payloadLen}, got ${data.length}");
         return null;
       }
 
       // Parse payload (status response should be at least 20 bytes)
       if (payloadLen < 20) {
-        print("Status payload too short: $payloadLen bytes");
         return null;
       }
 
@@ -110,7 +105,6 @@ class ProtocolUtils {
         'error_flags': payloadLen > 19 ? payload.getUint8(19) : 0,
       };
     } catch (e) {
-      print("Error parsing status response: $e");
       return null;
     }
   }

@@ -1,0 +1,24 @@
+{
+  "color": {
+    "primary": "#3B82F6",
+    "primary-700": "#2563EB",
+    "success": "#10B981",
+    "danger": "#EF4444",
+    "surface": "#FFFFFF",
+    "muted": "#64748B",
+    "bg": "#F8FAFC"
+  },
+  "typography": {
+    "font-family": "Inter, Arial, sans-serif",
+    "sizes": {
+      "h1": 22,
+      "h2": 18,
+      "body": 14,
+      "small": 12
+    }
+  },
+  "spacing": {
+    "gutter": 16,
+    "padding": 12
+  }
+}

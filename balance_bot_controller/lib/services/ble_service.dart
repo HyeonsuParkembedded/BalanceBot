@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../models/balance_pid_settings.dart';
@@ -26,18 +25,15 @@ class BleService {
   Future<bool> connect() async {
     try {
       // Check if Bluetooth is available and turned on
-      if (await FlutterBluePlus.isAvailable == false) {
-        print("Bluetooth not available");
+      if (await FlutterBluePlus.isSupported == false) {
         return false;
       }
 
-      if (await FlutterBluePlus.isOn == false) {
-        print("Bluetooth is turned off");
+      if (await FlutterBluePlus.adapterState.first != BluetoothAdapterState.on) {
         return false;
       }
 
       // Start scanning
-      print("Starting BLE scan...");
       FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
 
       // Listen for scan results
@@ -45,11 +41,10 @@ class BleService {
       await for (List<ScanResult> results in FlutterBluePlus.scanResults) {
         for (ScanResult result in results) {
         // Look for device with our service UUID or device name containing "Balance"
-        if (result.device.localName.toLowerCase().contains('balance') ||
-            result.device.localName.toLowerCase().contains('esp32') ||
-            result.advertisementData.serviceUuids.contains(serviceUuid)) {
+        if (result.device.platformName.toLowerCase().contains('balance') ||
+            result.device.platformName.toLowerCase().contains('esp32') ||
+            result.advertisementData.serviceUuids.contains(Guid(serviceUuid))) {
           targetDevice = result.device;
-          print("Found target device: ${result.device.localName}");
           break;
         }
         }
@@ -58,7 +53,6 @@ class BleService {
       FlutterBluePlus.stopScan();
 
       if (targetDevice == null) {
-        print("Balance Bot device not found");
         return false;
       }
 
@@ -78,7 +72,6 @@ class BleService {
       }
 
       if (targetService == null) {
-        print("Target service not found");
         await disconnect();
         return false;
       }
@@ -88,15 +81,12 @@ class BleService {
         String uuid = characteristic.uuid.toString().toLowerCase();
         if (uuid == commandCharUuid.toLowerCase()) {
           _commandCharacteristic = characteristic;
-          print("Command characteristic found");
         } else if (uuid == statusCharUuid.toLowerCase()) {
           _statusCharacteristic = characteristic;
-          print("Status characteristic found");
         }
       }
 
       if (_commandCharacteristic == null) {
-        print("Command characteristic not found");
         await disconnect();
         return false;
       }
@@ -105,21 +95,18 @@ class BleService {
       if (_statusCharacteristic != null) {
         try {
           await _statusCharacteristic!.setNotifyValue(true);
-          _statusSubscription = _statusCharacteristic!.value.listen((data) {
+          _statusSubscription = _statusCharacteristic!.lastValueStream.listen((data) {
             _handleStatusData(data);
           });
-          print("Subscribed to status notifications");
         } catch (e) {
-          print("Failed to subscribe to status notifications: $e");
+          // Failed to subscribe
         }
       }
 
       _isConnected = true;
-      print("Successfully connected to Balance Bot");
       return true;
 
     } catch (e) {
-      print("Connection error: $e");
       await disconnect();
       return false;
     }
@@ -138,9 +125,8 @@ class BleService {
       _commandCharacteristic = null;
       _statusCharacteristic = null;
       _isConnected = false;
-      print("Disconnected from Balance Bot");
     } catch (e) {
-      print("Disconnect error: $e");
+      // Disconnect error
     }
   }
 
@@ -167,10 +153,8 @@ class BleService {
 
       // Send command
       await _commandCharacteristic!.write(message, withoutResponse: true);
-      print("Move command sent: dir=$direction, turn=$turn, speed=$speed, balance=$balance, standup=$standup");
       return true;
     } catch (e) {
-      print("Failed to send move command: $e");
       return false;
     }
   }
@@ -202,10 +186,8 @@ class BleService {
 
       await _commandCharacteristic!.write(velocityConfig, withoutResponse: true);
 
-      print("PID settings sent successfully");
       return true;
     } catch (e) {
-      print("Failed to send PID settings: $e");
       return false;
     }
   }
@@ -230,7 +212,7 @@ class BleService {
         );
       }
     } catch (e) {
-      print("Failed to parse status data: $e");
+      // Failed to parse status data
     }
   }
 

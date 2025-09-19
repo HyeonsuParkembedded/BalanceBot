@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <!-- Outer ring -->
+  <circle cx="120" cy="120" r="110" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="4"/>
+  <!-- Tick marks (visual only) -->
+  <g stroke="#E2E8F0" stroke-width="2">
+    <line x1="120" y1="10" x2="120" y2="30"/>
+    <line x1="120" y1="230" x2="120" y2="210"/>
+    <line x1="10" y1="120" x2="30" y2="120"/>
+    <line x1="230" y1="120" x2="210" y2="120"/>
+  </g>
+  <!-- Center knob -->
+  <g filter="url(#shadow)">
+    <circle cx="120" cy="120" r="32" fill="#3B82F6"/>
+    <circle cx="120" cy="120" r="14" fill="#EFF6FF"/>
+  </g>
+  <!-- XY label (for Figma layer naming) -->
+  <text x="12" y="230" font-family="Arial" font-size="12" fill="#94A3B8">joystick.svg — component</text>
+</svg>

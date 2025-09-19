@@ -82,7 +82,7 @@ class _RCJoystickWidgetState extends State<RCJoystickWidget> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: widget.isConnected ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                    color: widget.isConnected ? Colors.green.withAlpha(25) : Colors.grey.withAlpha(25),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: widget.isConnected ? Colors.green : Colors.grey,
@@ -199,7 +199,7 @@ class _RCJoystickWidgetState extends State<RCJoystickWidget> {
         if (!widget.isConnected) return;
 
         final RenderBox renderBox = context.findRenderObject() as RenderBox;
-        final center = Offset(joystickSize / 2, joystickSize / 2);
+        const center = Offset(joystickSize / 2, joystickSize / 2);
         final localPosition = renderBox.globalToLocal(details.globalPosition);
 
         double deltaX = localPosition.dx - center.dx;
@@ -247,7 +247,7 @@ class _RCJoystickWidgetState extends State<RCJoystickWidget> {
                   color: widget.isConnected ? Colors.blue : Colors.grey,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withAlpha(76),
                       blurRadius: 4,
                       offset: const Offset(2, 2),
                     ),

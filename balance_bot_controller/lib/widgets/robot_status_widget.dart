@@ -54,7 +54,7 @@ class RobotStatusWidget extends StatelessWidget {
                 Switch(
                   value: isActive,
                   onChanged: isConnected ? (_) => onToggle() : null,
-                  activeColor: Colors.green,
+                  activeTrackColor: Colors.green,
                 ),
               ],
             ),

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="360" height="140" viewBox="0 0 360 140" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" rx="12" ry="12" width="356" height="136" fill="#FFFFFF" stroke="#E6EEF9" stroke-width="2"/>
+  <!-- Icon -->
+  <circle cx="44" cy="44" r="28" fill="#ECFDF5" stroke="#10B981" stroke-width="2"/>
+  <path d="M36 44 L50 44" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+  <!-- Text -->
+  <text x="88" y="44" font-family="Inter, Arial" font-size="16" fill="#0F172A" font-weight="600">BLE 연결 상태</text>
+  <text x="88" y="68" font-family="Inter, Arial" font-size="12" fill="#64748B">연결됨 — DeviceName</text>
+  <text x="88" y="88" font-family="Inter, Arial" font-size="12" fill="#64748B">배터리: 87%</text>
+  <text x="8" y="136" font-family="Arial" font-size="10" fill="#94A3B8">status_card.svg — component</text>
+</svg>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="720" height="1280" viewBox="0 0 720 1280" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="1280" fill="#FFFFFF"/>
+  <!-- Header -->
+  <text x="36" y="72" font-family="Inter, Arial" font-size="22" fill="#0F172A" font-weight="700">Balance Bot Controller</text>
+  <!-- BLE status card (use component) -->
+  <g transform="translate(20,110)">
+    <rect x="0" y="0" rx="12" width="680" height="160" fill="#F8FAFC" stroke="#E6EEF9"/>
+    <text x="88" y="48" font-family="Inter" font-size="16" fill="#0F172A" font-weight="600">연결 안됨</text>
+    <g transform="translate(520,24)">
+      <rect x="0" y="0" rx="8" width="140" height="48" fill="#3B82F6"/>
+      <text x="70" y="32" font-family="Inter" font-size="14" fill="#FFFFFF" text-anchor="middle">BLE 연결</text>
+    </g>
+  </g>
+  <!-- Control buttons -->
+  <g transform="translate(20,290)">
+    <g transform="translate(0,0)">
+      <rect x="0" y="0" rx="12" width="680" height="120" fill="#FFFFFF" stroke="#E6EEF9"/>
+      <text x="20" y="40" font-family="Inter" font-size="16" fill="#0F172A" font-weight="600">로봇 제어</text>
+      <g transform="translate(20,56)">
+        <rect x="0" y="0" rx="8" width="140" height="48" fill="#3B82F6"/>
+        <text x="70" y="32" font-family="Inter" font-size="13" fill="#FFFFFF" text-anchor="middle">균형 제어 활성화</text>
+      </g>
+      <g transform="translate(180,56)">
+        <rect x="0" y="0" rx="8" width="140" height="48" fill="#10B981"/>
+        <text x="70" y="32" font-family="Inter" font-size="13" fill="#FFFFFF" text-anchor="middle">기립</text>
+      </g>
+    </g>
+  </g>
+  <!-- Joystick area -->
+  <g transform="translate(240,460)">
+    <rect x="0" y="0" rx="12" width="240" height="240" fill="#F8FAFC" stroke="#E6EEF9"/>
+    <g transform="translate(0,0)">
+      <circle cx="120" cy="120" r="110" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="4"/>
+      <circle cx="120" cy="120" r="32" fill="#3B82F6"/>
+    </g>
+  </g>
+  <!-- Footer hint -->
+  <text x="36" y="1240" font-family="Arial" font-size="12" fill="#94A3B8">portrait_main.svg — screen mockup</text>
+</svg>

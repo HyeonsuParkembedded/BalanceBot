@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="420" height="320" viewBox="0 0 420 320" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" rx="10" ry="10" width="416" height="316" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/>
+  <text x="20" y="36" font-family="Inter, Arial" font-size="18" fill="#0F172A" font-weight="700">Balance PID 제어 설정</text>
+  <!-- Tab labels -->
+  <rect x="20" y="52" width="160" height="28" rx="6" fill="#EEF2FF"/>
+  <text x="30" y="72" font-family="Inter" font-size="12" fill="#3730A3">균형 제어 (Pitch)</text>
+  <rect x="188" y="52" width="160" height="28" rx="6" fill="#F3F4F6"/>
+  <text x="198" y="72" font-family="Inter" font-size="12" fill="#6B7280">속도 제어 (Velocity)</text>
+  <!-- Slider example rows -->
+  <g transform="translate(20,100)">
+    <text x="0" y="0" font-family="Inter" font-size="13" fill="#0F172A">Pitch Kp (비례 이득)</text>
+    <rect x="0" y="12" width="380" height="8" rx="4" fill="#E6EEF9"/>
+    <circle cx="60" cy="16" r="8" fill="#3B82F6"/>
+    <text x="0" y="48" font-family="Inter" font-size="12" fill="#64748B">0.0</text>
+    <text x="360" y="48" font-family="Inter" font-size="12" fill="#64748B" text-anchor="end">100.0</text>
+  </g>
+  <text x="8" y="312" font-family="Arial" font-size="10" fill="#94A3B8">pid_panel.svg — component</text>
+</svg>

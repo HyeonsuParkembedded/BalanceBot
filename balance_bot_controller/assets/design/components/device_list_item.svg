@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="720" height="84" viewBox="0 0 720 84" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" rx="10" width="716" height="80" fill="#FFFFFF" stroke="#E6EEF9"/>
+  <circle cx="56" cy="42" r="28" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+  <text x="108" y="36" font-family="Inter, Arial" font-size="16" fill="#0F172A" font-weight="600">Device Name</text>
+  <text x="108" y="56" font-family="Inter, Arial" font-size="12" fill="#64748B">MAC: 00:11:22:33:44:55</text>
+  <rect x="620" y="28" rx="8" width="84" height="28" fill="#3B82F6"/>
+  <text x="662" y="46" font-family="Inter" font-size="12" fill="#FFFFFF" text-anchor="middle">연결</text>
+  <text x="8" y="80" font-family="Arial" font-size="10" fill="#94A3B8">device_list_item.svg — component</text>
+</svg>
