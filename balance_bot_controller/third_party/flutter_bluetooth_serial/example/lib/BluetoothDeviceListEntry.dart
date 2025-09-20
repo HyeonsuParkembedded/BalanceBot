@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 class BluetoothDeviceListEntry extends ListTile {
-  BluetoothDeviceListEntry({
+  BluetoothDeviceListEntry({Key? key, 
     required BluetoothDevice device,
     int? rssi,
     GestureTapCallback? onTap,
     GestureLongPressCallback? onLongPress,
     bool enabled = true,
   }) : super(
-          onTap: onTap,
+          key: key, onTap: onTap,
           onLongPress: onLongPress,
           enabled: enabled,
           leading:
-              Icon(Icons.devices), // @TODO . !BluetoothClass! class aware icon
+              const Icon(Icons.devices), // @TODO . !BluetoothClass! class aware icon
           title: Text(device.name ?? ""),
           subtitle: Text(device.address.toString()),
           trailing: Row(
@@ -21,33 +21,33 @@ class BluetoothDeviceListEntry extends ListTile {
             children: <Widget>[
               rssi != null
                   ? Container(
-                      margin: new EdgeInsets.all(8.0),
+                      margin: const EdgeInsets.all(8.0),
                       child: DefaultTextStyle(
                         style: _computeTextStyle(rssi),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             Text(rssi.toString()),
-                            Text('dBm'),
+                            const Text('dBm'),
                           ],
                         ),
                       ),
                     )
-                  : Container(width: 0, height: 0),
+                  : SizedBox(width: 0, height: 0),
               device.isConnected
-                  ? Icon(Icons.import_export)
-                  : Container(width: 0, height: 0),
+                  ? const Icon(Icons.import_export)
+                  : SizedBox(width: 0, height: 0),
               device.isBonded
-                  ? Icon(Icons.link)
-                  : Container(width: 0, height: 0),
+                  ? const Icon(Icons.link)
+                  : SizedBox(width: 0, height: 0),
             ],
           ),
         );
 
   static TextStyle _computeTextStyle(int rssi) {
-    /**/ if (rssi >= -35)
+    /**/ if (rssi >= -35) {
       return TextStyle(color: Colors.greenAccent[700]);
-    else if (rssi >= -45)
+    } else if (rssi >= -45)
       return TextStyle(
           color: Color.lerp(
               Colors.greenAccent[700], Colors.lightGreen, -(rssi + 35) / 10));
@@ -68,6 +68,6 @@ class BluetoothDeviceListEntry extends ListTile {
               Colors.deepOrangeAccent, Colors.redAccent, -(rssi + 75) / 10));
     else
       /*code symmetry*/
-      return TextStyle(color: Colors.redAccent);
+      return const TextStyle(color: Colors.redAccent);
   }
 }

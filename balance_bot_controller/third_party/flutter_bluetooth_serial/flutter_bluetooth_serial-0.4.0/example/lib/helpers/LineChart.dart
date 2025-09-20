@@ -84,7 +84,7 @@ class LineChart extends StatelessWidget {
   final double additionalMinimalHorizontalLabelsInterval;
   final double additionalMinimalVerticalLablesInterval;
 
-  LineChart({
+  LineChart({Key? key, 
     required this.constraints,
     this.padding = const EdgeInsets.fromLTRB(32, 12, 20, 28),
     required this.arguments,
@@ -104,7 +104,7 @@ class LineChart extends StatelessWidget {
   })  : horizontalLinesPaint = horizontalLinesStyle.toPaint(),
         verticalLinesPaint = verticalLinesStyle?.toPaint(),
         seriesPointsPaints = _prepareSeriesPointsPaints(seriesPointsStyles),
-        seriesLinesPaints = _prepareSeriesLinesPaints(seriesLinesStyles) {
+        seriesLinesPaints = _prepareSeriesLinesPaints(seriesLinesStyles), super(key: key) {
     if ((seriesPointsStyles?.length ?? values.length) < values.length &&
         12 /* default paints */ < values.length) {
       throw "Too few `seriesPointsPaintStyle`s! Try define more or limit number of displayed series";
@@ -119,20 +119,20 @@ class LineChart extends StatelessWidget {
     if (seriesPointsStyles == null) {
       // Default paint for points
       return List<Paint?>.unmodifiable(<Paint>[
-        PaintStyle(strokeWidth: 1.7, color: Colors.blue).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.red).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.yellow).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.green).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.blue).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.red).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.yellow).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.green).toPaint(),
 
-        PaintStyle(strokeWidth: 1.7, color: Colors.purple).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.deepOrange).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.brown).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.lime).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.purple).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.deepOrange).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.brown).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.lime).toPaint(),
 
-        PaintStyle(strokeWidth: 1.7, color: Colors.indigo).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.pink).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.amber).toPaint(),
-        PaintStyle(strokeWidth: 1.7, color: Colors.teal).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.indigo).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.pink).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.amber).toPaint(),
+        const PaintStyle(strokeWidth: 1.7, color: Colors.teal).toPaint(),
 
         // For more, user should specify them :F
       ]);
@@ -153,7 +153,7 @@ class LineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-        constraints: this.constraints,
+        constraints: constraints,
         child: CustomPaint(
             painter: _LineChartPainter(
           padding: padding,
@@ -162,9 +162,9 @@ class LineChart extends StatelessWidget {
           values: values,
           valuesLabels: valuesLabels,
           horizontalLabelsTextStyle:
-              horizontalLabelsTextStyle ?? Theme.of(context).textTheme.caption,
+              horizontalLabelsTextStyle ?? Theme.of(context).textTheme.bodySmall,
           verticalLabelsTextStyle:
-              verticalLabelsTextStyle ?? Theme.of(context).textTheme.caption,
+              verticalLabelsTextStyle ?? Theme.of(context).textTheme.bodySmall,
           horizontalLinesPaint: horizontalLinesPaint,
           verticalLinesPaint: verticalLinesPaint,
           additionalMinimalHorizontalLabelsInterval:
@@ -256,7 +256,7 @@ class _LineChartPainter extends CustomPainter {
     double additionalMinimalVerticalLablesInterval = 8,
     required this.seriesPointsPaints,
     required this.seriesLinesPaints,
-  }) : this.minimalHorizontalLabelsInterval =
+  }) : minimalHorizontalLabelsInterval =
             (horizontalLabelsTextStyle?.fontSize ?? 12) +
                 additionalMinimalHorizontalLabelsInterval {
     // Find max & min values of data to be show
@@ -510,7 +510,7 @@ class _LineChartPainter extends CustomPainter {
       Iterator<double> argument = arguments.iterator;
       while (value.moveNext()) {
         argument.moveNext();
-        if (value.current == null || value.current == double.nan) continue;
+        if (value.current == null) continue;
 
         if (argument.current < argumentsOffset) continue;
         final double xOffset = padding.left +
@@ -541,15 +541,15 @@ class _LineChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LineChartPainter old) =>
-      (this.arguments != old.arguments ||
-          this.values != old.values ||
-          this.argumentsLabels != old.argumentsLabels ||
-          this.valuesLabels != old.valuesLabels ||
-          this.seriesPointsPaints != old.seriesPointsPaints ||
-          this.seriesLinesPaints != old.seriesLinesPaints ||
-          this.horizontalLabelsTextStyle != old.horizontalLabelsTextStyle ||
-          this.verticalLabelsTextStyle != old.verticalLabelsTextStyle ||
-          this.padding != old.padding //
+      (arguments != old.arguments ||
+          values != old.values ||
+          argumentsLabels != old.argumentsLabels ||
+          valuesLabels != old.valuesLabels ||
+          seriesPointsPaints != old.seriesPointsPaints ||
+          seriesLinesPaints != old.seriesLinesPaints ||
+          horizontalLabelsTextStyle != old.horizontalLabelsTextStyle ||
+          verticalLabelsTextStyle != old.verticalLabelsTextStyle ||
+          padding != old.padding //
       );
 
   // ..., 0.01, 0.02, 0.05, 0.1, [0.125], 0.2, [0.25], 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, ...

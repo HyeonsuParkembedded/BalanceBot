@@ -5,6 +5,8 @@ import './helpers/LineChart.dart';
 import './helpers/PaintStyle.dart';
 
 class BackgroundCollectedPage extends StatelessWidget {
+  const BackgroundCollectedPage({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final BackgroundCollectingTask task =
@@ -14,7 +16,7 @@ class BackgroundCollectedPage extends StatelessWidget {
     final int argumentsShift =
         task.samples.first.timestamp.millisecondsSinceEpoch;
 
-    final Duration showDuration =
+    const Duration showDuration =
         Duration(hours: 2); // @TODO . show duration should be configurable
     final Iterable<DataSample> lastSamples = task.getLastOf(showDuration);
 
@@ -24,7 +26,7 @@ class BackgroundCollectedPage extends StatelessWidget {
     });
 
     // Step for argument labels
-    final Duration argumentsStep =
+    const Duration argumentsStep =
         Duration(minutes: 15); // @TODO . step duration should be configurable
 
     // Find first timestamp floored to step before
@@ -52,40 +54,36 @@ class BackgroundCollectedPage extends StatelessWidget {
         argumentsLabelsTimestamps.map((timestamp) {
       return LabelEntry(
           (timestamp.millisecondsSinceEpoch - argumentsShift).toDouble(),
-          ((timestamp.hour <= 9 ? '0' : '') +
-              timestamp.hour.toString() +
-              ':' +
-              (timestamp.minute <= 9 ? '0' : '') +
-              timestamp.minute.toString()));
+          ('${timestamp.hour <= 9 ? '0' : ''}${timestamp.hour}:${timestamp.minute <= 9 ? '0' : ''}${timestamp.minute}'));
     });
 
     return Scaffold(
         appBar: AppBar(
-          title: Text('Collected data'),
+          title: const Text('Collected data'),
           actions: <Widget>[
             // Progress circle
             (task.inProgress
                 ? FittedBox(
                     child: Container(
-                        margin: new EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(
+                        margin: const EdgeInsets.all(16.0),
+                        child: const CircularProgressIndicator(
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.white))))
                 : Container(/* Dummy */)),
             // Start/stop buttons
             (task.inProgress
-                ? IconButton(icon: Icon(Icons.pause), onPressed: task.pause)
+                ? IconButton(icon: const Icon(Icons.pause), onPressed: task.pause)
                 : IconButton(
-                    icon: Icon(Icons.play_arrow), onPressed: task.reasume)),
+                    icon: const Icon(Icons.play_arrow), onPressed: task.reasume)),
           ],
         ),
         body: ListView(
           children: <Widget>[
-            Divider(),
-            ListTile(
-              leading: const Icon(Icons.brightness_7),
-              title: const Text('Temperatures'),
-              subtitle: const Text('In Celsius'),
+            const Divider(),
+            const ListTile(
+              leading: Icon(Icons.brightness_7),
+              title: Text('Temperatures'),
+              subtitle: Text('In Celsius'),
             ),
             LineChart(
               constraints: const BoxConstraints.expand(height: 350),
@@ -98,26 +96,26 @@ class BackgroundCollectedPage extends StatelessWidget {
               verticalLinesStyle: const PaintStyle(color: Colors.grey),
               additionalMinimalHorizontalLabelsInterval: 0,
               additionalMinimalVerticalLablesInterval: 0,
-              seriesPointsStyles: [
+              seriesPointsStyles: const [
                 null,
                 null,
                 //const PaintStyle(style: PaintingStyle.stroke, strokeWidth: 1.7*3, color: Colors.indigo, strokeCap: StrokeCap.round),
               ],
-              seriesLinesStyles: [
-                const PaintStyle(
+              seriesLinesStyles: const [
+                PaintStyle(
                     style: PaintingStyle.stroke,
                     strokeWidth: 1.7,
                     color: Colors.indigoAccent),
-                const PaintStyle(
+                PaintStyle(
                     style: PaintingStyle.stroke,
                     strokeWidth: 1.7,
                     color: Colors.redAccent),
               ],
             ),
-            Divider(),
-            ListTile(
-              leading: const Icon(Icons.filter_vintage),
-              title: const Text('Water pH level'),
+            const Divider(),
+            const ListTile(
+              leading: Icon(Icons.filter_vintage),
+              title: Text('Water pH level'),
             ),
             LineChart(
               constraints: const BoxConstraints.expand(height: 200),
@@ -129,11 +127,11 @@ class BackgroundCollectedPage extends StatelessWidget {
               verticalLinesStyle: const PaintStyle(color: Colors.grey),
               additionalMinimalHorizontalLabelsInterval: 0,
               additionalMinimalVerticalLablesInterval: 0,
-              seriesPointsStyles: [
+              seriesPointsStyles: const [
                 null,
               ],
-              seriesLinesStyles: [
-                const PaintStyle(
+              seriesLinesStyles: const [
+                PaintStyle(
                     style: PaintingStyle.stroke,
                     strokeWidth: 1.7,
                     color: Colors.greenAccent),
