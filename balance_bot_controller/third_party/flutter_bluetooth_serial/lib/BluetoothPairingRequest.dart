@@ -30,6 +30,7 @@ class PairingVariant {
   }
   int toUnderlyingValue() => underlyingValue;
 
+  @override
   String toString() {
     switch (underlyingValue) {
       case 0:

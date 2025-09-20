@@ -43,3 +43,39 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Additional Android build files
+/android/.gradle/
+/android/.kotlin/
+/android/build/
+/android/app/build/
+
+# APK files (exclude from git but keep locally)
+*.apk
+*.aab
+/build/app/outputs/
+/apks/
+
+# iOS build files
+/ios/build/
+/ios/.symlinks/
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+
+# macOS build files
+/macos/build/
+/macos/.symlinks/
+
+# Linux build files
+/linux/build/
+
+# Windows build files
+/windows/build/
+
+# Web build files
+/web/build/
+
+# Additional IDE files
+*.iml
+.vscode/launch.json
+.vscode/settings.json

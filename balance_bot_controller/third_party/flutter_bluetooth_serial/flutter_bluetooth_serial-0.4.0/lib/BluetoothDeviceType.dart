@@ -5,7 +5,7 @@ class BluetoothDeviceType {
   final String stringValue;
 
   const BluetoothDeviceType.fromString(String string)
-      : this.underlyingValue = (string == 'unknown'
+      : underlyingValue = (string == 'unknown'
                 ? 0
                 : string == 'classic'
                     ? 1
@@ -15,7 +15,7 @@ class BluetoothDeviceType {
                             ? 3
                             : -2 // Unknown, if not found valid
             ),
-        this.stringValue = ((string == 'unknown' ||
+        stringValue = ((string == 'unknown' ||
                     string == 'classic' ||
                     string == 'le' ||
                     string == 'dual' //
@@ -25,11 +25,11 @@ class BluetoothDeviceType {
             );
 
   const BluetoothDeviceType.fromUnderlyingValue(int value)
-      : this.underlyingValue = ((value >= 0 && value <= 3)
+      : underlyingValue = ((value >= 0 && value <= 3)
                 ? value
                 : 0 // Unknown, if not found valid
             ),
-        this.stringValue = (value == 0
+        stringValue = (value == 0
                 ? 'unknown'
                 : value == 1
                     ? 'classic'
@@ -40,6 +40,7 @@ class BluetoothDeviceType {
                             : 'unknown' // Unknown, if not found valid
             );
 
+  @override
   String toString() => 'BluetoothDeviceType.$stringValue';
 
   int toUnderlyingValue() => underlyingValue;
@@ -49,9 +50,10 @@ class BluetoothDeviceType {
   static const le = BluetoothDeviceType.fromUnderlyingValue(2);
   static const dual = BluetoothDeviceType.fromUnderlyingValue(3);
 
+  @override
   operator ==(Object other) {
     return other is BluetoothDeviceType &&
-        other.underlyingValue == this.underlyingValue;
+        other.underlyingValue == underlyingValue;
   }
 
   @override

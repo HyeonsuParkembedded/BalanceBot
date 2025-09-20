@@ -5,7 +5,7 @@ class BluetoothBondState {
   final String stringValue;
 
   const BluetoothBondState.fromString(String string)
-      : this.underlyingValue = (string == 'none'
+      : underlyingValue = (string == 'none'
                 ? 10
                 : string == 'bonding'
                     ? 11
@@ -13,7 +13,7 @@ class BluetoothBondState {
                         ? 12
                         : -2 // Unknown, if not found valid
             ),
-        this.stringValue =
+        stringValue =
             ((string == 'none' || string == 'bonding' || string == 'bonded' //
                 )
                 ? string
@@ -21,11 +21,11 @@ class BluetoothBondState {
             );
 
   const BluetoothBondState.fromUnderlyingValue(int value)
-      : this.underlyingValue = ((value >= 10 && value <= 12)
+      : underlyingValue = ((value >= 10 && value <= 12)
                 ? value
                 : 0 // Unknown, if not found valid
             ),
-        this.stringValue = (value == 10
+        stringValue = (value == 10
                 ? 'none'
                 : value == 11
                     ? 'bonding'
@@ -34,6 +34,7 @@ class BluetoothBondState {
                         : 'unknown' // Unknown, if not found valid
             );
 
+  @override
   String toString() => 'BluetoothBondState.$stringValue';
 
   int toUnderlyingValue() => underlyingValue;
@@ -43,9 +44,10 @@ class BluetoothBondState {
   static const bonding = BluetoothBondState.fromUnderlyingValue(11);
   static const bonded = BluetoothBondState.fromUnderlyingValue(12);
 
+  @override
   operator ==(Object other) {
     return other is BluetoothBondState &&
-        other.underlyingValue == this.underlyingValue;
+        other.underlyingValue == underlyingValue;
   }
 
   @override

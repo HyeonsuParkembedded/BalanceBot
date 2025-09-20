@@ -55,19 +55,20 @@ class BluetoothDevice {
 
   /// Creates map from `BluetoothDevice`.
   Map<String, dynamic> toMap() => {
-        "name": this.name,
-        "address": this.address,
-        "type": this.type.toUnderlyingValue(),
-        "isConnected": this.isConnected,
-        "bondState": this.bondState.toUnderlyingValue(),
+        "name": name,
+        "address": address,
+        "type": type.toUnderlyingValue(),
+        "isConnected": isConnected,
+        "bondState": bondState.toUnderlyingValue(),
       };
 
   /// Compares for equality of this and other `BluetoothDevice`.
   ///
   /// In fact, only `address` is compared, since this is most important
   /// and unchangable information that identifies each device.
+  @override
   operator ==(Object other) {
-    return other is BluetoothDevice && other.address == this.address;
+    return other is BluetoothDevice && other.address == address;
   }
 
   @override

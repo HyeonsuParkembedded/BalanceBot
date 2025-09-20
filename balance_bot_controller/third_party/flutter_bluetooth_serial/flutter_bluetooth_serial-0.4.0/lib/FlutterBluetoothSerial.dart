@@ -4,12 +4,12 @@ class FlutterBluetoothSerial {
   // Plugin
   static const String namespace = 'flutter_bluetooth_serial';
 
-  static FlutterBluetoothSerial _instance = new FlutterBluetoothSerial._();
+  static final FlutterBluetoothSerial _instance = FlutterBluetoothSerial._();
 
   static FlutterBluetoothSerial get instance => _instance;
 
-  static final MethodChannel _methodChannel =
-      const MethodChannel('$namespace/methods');
+  static const MethodChannel _methodChannel =
+      MethodChannel('$namespace/methods');
 
   FlutterBluetoothSerial._() {
     _methodChannel.setMethodCallHandler((MethodCall call) async {
@@ -40,8 +40,8 @@ class FlutterBluetoothSerial {
   @Deprecated('Use `isEnabled` instead')
   Future<bool?> get isOn async => await _methodChannel.invokeMethod('isOn');
 
-  static final EventChannel _stateChannel =
-      const EventChannel('$namespace/state');
+  static const EventChannel _stateChannel =
+      EventChannel('$namespace/state');
 
   /// Allows monitoring the Bluetooth adapter state changes.
   Stream<BluetoothState> onStateChanged() => _stateChannel
@@ -113,7 +113,7 @@ class FlutterBluetoothSerial {
         throw "pairing request handler already registered";
       }
       setPairingRequestHandler((BluetoothPairingRequest request) async {
-        Future.delayed(Duration(seconds: 1), () {
+        Future.delayed(const Duration(seconds: 1), () {
           setPairingRequestHandler(null);
         });
         if (pin != null) {
@@ -180,7 +180,7 @@ class FlutterBluetoothSerial {
   /// Note: It is necessary to return from handler within 10 seconds, since
   /// Android BroadcastReceiver can wait safely only up to that duration.
   void setPairingRequestHandler(
-      Future<dynamic> handler(BluetoothPairingRequest request)?) {
+      Future<dynamic> Function(BluetoothPairingRequest request)? handler) {
     if (handler == null) {
       _pairingRequestHandler = null;
       _methodChannel.invokeMethod('pairingRequestHandlingDisable');
@@ -198,8 +198,8 @@ class FlutterBluetoothSerial {
     return list.map((map) => BluetoothDevice.fromMap(map)).toList();
   }
 
-  static final EventChannel _discoveryChannel =
-      const EventChannel('$namespace/discovery');
+  static const EventChannel _discoveryChannel =
+      EventChannel('$namespace/discovery');
 
   /// Describes is the dicovery process of Bluetooth devices running.
   Future<bool?> get isDiscovering async =>
@@ -210,7 +210,7 @@ class FlutterBluetoothSerial {
     late StreamSubscription subscription;
     StreamController controller;
 
-    controller = new StreamController(
+    controller = StreamController(
       onCancel: () {
         // `cancelDiscovery` happens automaticly by platform code when closing event sink
         subscription.cancel();
@@ -272,7 +272,7 @@ class FlutterBluetoothSerial {
   @Deprecated(
       'Use `BluetoothConnection.output` with some decoding (such as `ascii.decode` for strings) instead')
   Future<void> write(String message) {
-    _defaultConnection!.output.add(utf8.encode(message) as Uint8List);
+    _defaultConnection!.output.add(utf8.encode(message));
     return _defaultConnection!.output.allSent;
   }
 

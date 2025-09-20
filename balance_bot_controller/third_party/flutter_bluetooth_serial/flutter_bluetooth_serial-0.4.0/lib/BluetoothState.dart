@@ -5,7 +5,7 @@ class BluetoothState {
   final String stringValue;
 
   const BluetoothState.fromString(String string)
-      : this.underlyingValue = (string == 'STATE_OFF'
+      : underlyingValue = (string == 'STATE_OFF'
                 ? 10
                 : string == 'STATE_TURNING_ON'
                     ? 11
@@ -26,7 +26,7 @@ class BluetoothState {
                                             ? -1
                                             : -2 // Unknown, if not found valid
             ),
-        this.stringValue = ((string == 'STATE_OFF' ||
+        stringValue = ((string == 'STATE_OFF' ||
                     string == 'STATE_TURNING_ON' ||
                     string == 'STATE_ON' ||
                     string == 'STATE_TURNING_OFF' ||
@@ -41,11 +41,11 @@ class BluetoothState {
             );
 
   const BluetoothState.fromUnderlyingValue(int value)
-      : this.underlyingValue = (((value >= 10 && value <= 16) || value == -1)
+      : underlyingValue = (((value >= 10 && value <= 16) || value == -1)
                 ? value
                 : -2 // Unknown, if not found valid
             ),
-        this.stringValue = (value == 10
+        stringValue = (value == 10
                 ? 'STATE_OFF'
                 : value == 11
                     ? 'STATE_TURNING_ON'
@@ -67,6 +67,7 @@ class BluetoothState {
                                             : 'UNKNOWN' // Unknown, if not found valid
             );
 
+  @override
   String toString() => 'BluetoothState.$stringValue';
 
   int toUnderlyingValue() => underlyingValue;
@@ -84,9 +85,10 @@ class BluetoothState {
   static const ERROR = BluetoothState.fromUnderlyingValue(-1);
   static const UNKNOWN = BluetoothState.fromUnderlyingValue(-2);
 
+  @override
   operator ==(Object other) {
     return other is BluetoothState &&
-        other.underlyingValue == this.underlyingValue;
+        other.underlyingValue == underlyingValue;
   }
 
   @override
