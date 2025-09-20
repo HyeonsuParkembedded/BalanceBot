@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../utils/design_tokens.dart';
 
 class SampleSvgDemo extends StatelessWidget {
-  const SampleSvgDemo({Key? key}) : super(key: key);
+  const SampleSvgDemo({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,7 @@ class SampleSvgDemo extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Components: joystick', style: TextStyle(fontSize: DesignTokens.body)),
+            const Text('Components: joystick', style: TextStyle(fontSize: DesignTokens.body)),
             const SizedBox(height: 12),
             SvgPicture.asset(
               'assets/design/components/joystick.svg',
@@ -25,7 +25,7 @@ class SampleSvgDemo extends StatelessWidget {
               height: 200,
             ),
             const SizedBox(height: 24),
-            Text('Screen mockup: portrait', style: TextStyle(fontSize: DesignTokens.body)),
+            const Text('Screen mockup: portrait', style: TextStyle(fontSize: DesignTokens.body)),
             const SizedBox(height: 12),
             SvgPicture.asset(
               'assets/design/screens/portrait_main.svg',

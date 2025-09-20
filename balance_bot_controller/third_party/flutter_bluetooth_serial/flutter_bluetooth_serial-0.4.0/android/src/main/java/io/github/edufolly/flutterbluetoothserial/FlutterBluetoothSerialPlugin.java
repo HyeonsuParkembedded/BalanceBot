@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -18,7 +19,8 @@ import androidx.core.content.ContextCompat;
 
 import android.util.Log;
 import android.util.SparseArray;
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -27,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.net.NetworkInterface;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -77,6 +81,10 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
     private Activity activity;
     private BinaryMessenger messenger;
     private Context activeContext;
+    
+    // Modern async execution
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     /// Constructs the plugin instance
     public FlutterBluetoothSerialPlugin() {
@@ -113,7 +121,12 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
                     case BluetoothDevice.ACTION_PAIRING_REQUEST:
-                        final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        final BluetoothDevice device;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                        } else {
+                            device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        }
                         final int pairingVariant = intent.getIntExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.ERROR);
                         Log.d(TAG, "Pairing request (variant " + pairingVariant + ") incoming from " + device.getAddress());
                         switch (pairingVariant) {
@@ -267,7 +280,12 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
                 final String action = intent.getAction();
                 switch (action) {
                     case BluetoothDevice.ACTION_FOUND:
-                        final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        final BluetoothDevice device;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                        } else {
+                            device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        }
                         //final BluetoothClass deviceClass = intent.getParcelableExtra(BluetoothDevice.EXTRA_CLASS); // @TODO . !BluetoothClass!
                         //final String extraName = intent.getStringExtra(BluetoothDevice.EXTRA_NAME); // @TODO ? !EXTRA_NAME!
                         final int deviceRSSI = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
@@ -375,6 +393,11 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPlugin.FlutterPluginBinding binding) {
         if (methodChannel != null) methodChannel.setMethodCallHandler(null);
+        
+        // Clean up executor service
+        if (executorService != null && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
     }
 
     @Override
@@ -511,7 +534,7 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
                     self.disconnect();
 
                     // True dispose
-                    AsyncTask.execute(() -> {
+                    executorService.execute(() -> {
                         readChannel.setStreamHandler(null);
                         connections.remove(id);
 
@@ -524,7 +547,7 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
 
         @Override
         protected void onRead(byte[] buffer) {
-            activity.runOnUiThread(() -> {
+            mainHandler.post(() -> {
                 if (readSink != null) {
                     readSink.success(buffer);
                 }
@@ -533,7 +556,7 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
 
         @Override
         protected void onDisconnected(boolean byRemote) {
-            activity.runOnUiThread(() -> {
+            mainHandler.post(() -> {
                 if (byRemote) {
                     Log.d(TAG, "onDisconnected by remote (id: " + id + ")");
                     if (readSink != null) {
@@ -590,8 +613,15 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
 
                 case "requestDisable":
                     if (bluetoothAdapter.isEnabled()) {
-                        bluetoothAdapter.disable();
-                        result.success(true);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            // From Android 10+, apps cannot directly disable Bluetooth
+                            // User must manually disable it through settings
+                            ContextCompat.startActivity(activity, new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS), null);
+                            result.success(false);
+                        } else {
+                            bluetoothAdapter.disable();
+                            result.success(true);
+                        }
                     } else {
                         result.success(false);
                     }
@@ -828,7 +858,12 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
                             switch (intent.getAction()) {
                                 // @TODO . BluetoothDevice.ACTION_PAIRING_CANCEL
                                 case BluetoothDevice.ACTION_BOND_STATE_CHANGED:
-                                    final BluetoothDevice someDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                                    final BluetoothDevice someDevice;
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        someDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                                    } else {
+                                        someDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                                    }
                                     if (!someDevice.equals(device)) {
                                         break;
                                     }
@@ -1002,12 +1037,12 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
 
                     Log.d(TAG, "Connecting to " + address + " (id: " + id + ")");
 
-                    AsyncTask.execute(() -> {
+                    executorService.execute(() -> {
                         try {
                             connection.connect(address);
-                            activity.runOnUiThread(() -> result.success(id));
+                            mainHandler.post(() -> result.success(id));
                         } catch (Exception ex) {
-                            activity.runOnUiThread(() -> result.error("connect_error", ex.getMessage(), exceptionToString(ex)));
+                            mainHandler.post(() -> result.error("connect_error", ex.getMessage(), exceptionToString(ex)));
                             connections.remove(id);
                         }
                     });
@@ -1036,22 +1071,22 @@ public class FlutterBluetoothSerialPlugin implements FlutterPlugin, ActivityAwar
 
                     if (call.hasArgument("string")) {
                         String string = call.argument("string");
-                        AsyncTask.execute(() -> {
+                        executorService.execute(() -> {
                             try {
                                 connection.write(string.getBytes());
-                                activity.runOnUiThread(() -> result.success(null));
+                                mainHandler.post(() -> result.success(null));
                             } catch (Exception ex) {
-                                activity.runOnUiThread(() -> result.error("write_error", ex.getMessage(), exceptionToString(ex)));
+                                mainHandler.post(() -> result.error("write_error", ex.getMessage(), exceptionToString(ex)));
                             }
                         });
                     } else if (call.hasArgument("bytes")) {
                         byte[] bytes = call.argument("bytes");
-                        AsyncTask.execute(() -> {
+                        executorService.execute(() -> {
                             try {
                                 connection.write(bytes);
-                                activity.runOnUiThread(() -> result.success(null));
+                                mainHandler.post(() -> result.success(null));
                             } catch (Exception ex) {
-                                activity.runOnUiThread(() -> result.error("write_error", ex.getMessage(), exceptionToString(ex)));
+                                mainHandler.post(() -> result.error("write_error", ex.getMessage(), exceptionToString(ex)));
                             }
                         });
                     } else {

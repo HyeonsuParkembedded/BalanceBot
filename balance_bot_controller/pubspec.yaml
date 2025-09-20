@@ -23,6 +23,8 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.0
   flutter_launcher_icons: "^0.13.1"
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
@@ -39,4 +41,4 @@ flutter_launcher_icons:
 
 dependency_overrides:
   flutter_bluetooth_serial:
-    path: third_party/flutter_bluetooth_serial
+    path: third_party/flutter_bluetooth_serial/flutter_bluetooth_serial-0.4.0

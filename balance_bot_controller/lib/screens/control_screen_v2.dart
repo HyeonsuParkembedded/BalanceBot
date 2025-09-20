@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:math' as math;
 import '../services/ble_service.dart';
 import '../models/balance_pid_settings.dart';
@@ -182,7 +181,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: DesignTokens.body,
             fontWeight: FontWeight.w600,
             color: DesignTokens.primary,
@@ -229,10 +228,10 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: DesignTokens.surface,
-              border: Border.all(color: DesignTokens.primary.withOpacity(0.3), width: 2),
+              border: Border.all(color: DesignTokens.primary.withValues(alpha: 0.3), width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: DesignTokens.primary.withOpacity(0.08),
+                  color: DesignTokens.primary.withValues(alpha: 0.08),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),
@@ -244,7 +243,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                 Center(
                   child: Icon(
                     verticalOnly ? Icons.swap_vert : (horizontalOnly ? Icons.swap_horiz : Icons.control_camera),
-                    color: DesignTokens.muted.withOpacity(0.3),
+                    color: DesignTokens.muted.withValues(alpha: 0.3),
                     size: 40,
                   ),
                 ),
@@ -257,7 +256,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                     height: knobSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: _isConnected ? LinearGradient(
+                      gradient: _isConnected ? const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
@@ -267,14 +266,14 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                       ) : LinearGradient(
                         colors: [
                           DesignTokens.muted,
-                          DesignTokens.muted.withOpacity(0.8),
+                          DesignTokens.muted.withValues(alpha: 0.8),
                         ],
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: _isConnected 
-                            ? DesignTokens.primary.withOpacity(0.4)
-                            : Colors.black.withOpacity(0.2),
+                            ? DesignTokens.primary.withValues(alpha: 0.4)
+                            : Colors.black.withValues(alpha: 0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -292,13 +291,13 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
 
   Widget _buildStatusCard() {
     return Container(
-      padding: EdgeInsets.all(DesignTokens.padding * 1.5),
+      padding: const EdgeInsets.all(DesignTokens.padding * 1.5),
       decoration: BoxDecoration(
         color: DesignTokens.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: DesignTokens.muted.withOpacity(0.1),
+            color: DesignTokens.muted.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -313,7 +312,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: _isConnected ? DesignTokens.success.withOpacity(0.1) : DesignTokens.muted.withOpacity(0.1),
+                  color: _isConnected ? DesignTokens.success.withValues(alpha: 0.1) : DesignTokens.muted.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -339,7 +338,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                     if (_isConnected) ...[
                       Text(
                         _bleService.connectedDevice?.platformName ?? "Unknown",
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: DesignTokens.small,
                           color: DesignTokens.muted,
                           fontFamily: DesignTokens.fontFamily,
@@ -353,12 +352,12 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: DesignTokens.primary.withOpacity(0.1),
+                    color: DesignTokens.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.battery_charging_full,
                         size: 16,
                         color: DesignTokens.primary,
@@ -366,7 +365,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                       const SizedBox(width: 4),
                       Text(
                         '$_batteryLevel%',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: DesignTokens.small,
                           fontWeight: FontWeight.bold,
                           color: DesignTokens.primary,
@@ -386,7 +385,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
               icon: Icon(_isConnected ? Icons.bluetooth_disabled : Icons.bluetooth),
               label: Text(
                 _isConnected ? '연결 해제' : 'BLE 연결',
-                style: TextStyle(fontFamily: DesignTokens.fontFamily),
+                style: const TextStyle(fontFamily: DesignTokens.fontFamily),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: _isConnected ? DesignTokens.danger : DesignTokens.primary,
@@ -413,7 +412,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: DesignTokens.muted.withOpacity(0.1),
+                  color: DesignTokens.muted.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -461,7 +460,7 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: DesignTokens.muted.withOpacity(0.1),
+                  color: DesignTokens.muted.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -510,16 +509,16 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
           end: Alignment.bottomCenter,
           colors: [
             DesignTokens.bg,
-            DesignTokens.bg.withOpacity(0.8),
+            DesignTokens.bg.withValues(alpha: 0.8),
           ],
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.all(DesignTokens.gutter),
+        padding: const EdgeInsets.all(DesignTokens.gutter),
         child: Column(
           children: [
             // 상단 제목
-            Text(
+            const Text(
               'Balance Bot Controller',
               style: TextStyle(
                 fontSize: DesignTokens.h1,
@@ -544,13 +543,13 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
 
                     // PID 설정
                     Container(
-                      padding: EdgeInsets.all(DesignTokens.padding),
+                      padding: const EdgeInsets.all(DesignTokens.padding),
                       decoration: BoxDecoration(
                         color: DesignTokens.surface,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: DesignTokens.muted.withOpacity(0.1),
+                            color: DesignTokens.muted.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -597,16 +596,16 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
           end: Alignment.bottomCenter,
           colors: [
             DesignTokens.bg,
-            DesignTokens.bg.withOpacity(0.8),
+            DesignTokens.bg.withValues(alpha: 0.8),
           ],
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.all(DesignTokens.gutter),
+        padding: const EdgeInsets.all(DesignTokens.gutter),
         child: Column(
           children: [
             // 상단 제목
-            Text(
+            const Text(
               'Balance Bot Controller',
               style: TextStyle(
                 fontSize: DesignTokens.h1,
@@ -654,13 +653,13 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
                           const SizedBox(height: 16),
                           // PID 설정
                           Container(
-                            padding: EdgeInsets.all(DesignTokens.padding),
+                            padding: const EdgeInsets.all(DesignTokens.padding),
                             decoration: BoxDecoration(
                               color: DesignTokens.surface,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: DesignTokens.muted.withOpacity(0.1),
+                                  color: DesignTokens.muted.withValues(alpha: 0.1),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
