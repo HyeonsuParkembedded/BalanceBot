@@ -13,7 +13,6 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter_blue_plus: ^1.32.7
   shared_preferences: ^2.2.2
-  flutter_bluetooth_serial: ^0.4.0
   http: ^1.2.1
   flutter_svg: ^1.1.0
   permission_handler: ^11.3.1
@@ -38,7 +37,3 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/app_icon.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
-
-dependency_overrides:
-  flutter_bluetooth_serial:
-    path: third_party/flutter_bluetooth_serial/flutter_bluetooth_serial-0.4.0

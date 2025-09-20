@@ -1,3 +1,10 @@
+/// @file control_screen_v2.dart
+/// @brief BalanceBot 메인 컨트롤 화면 (버전 2)
+/// @details ESP32 BalanceBot과의 블루투스 통신 및 실시간 제어를 담당하는 메인 UI
+/// @author BalanceBot Development Team
+/// @date 2025
+library control_screen_v2;
+
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../services/ble_service.dart';
@@ -5,39 +12,85 @@ import '../models/balance_pid_settings.dart';
 import '../widgets/balance_pid_widget.dart';
 import '../utils/design_tokens.dart';
 
+/// @class ControlScreenV2
+/// @brief BalanceBot 제어를 위한 메인 화면 위젯
+/// @details 블루투스 연결, PID 설정, 조이스틱 제어, 상태 모니터링 기능을 제공합니다.
+/// 
+/// 주요 기능:
+/// - ESP32와 BLE 통신
+/// - 실시간 PID 파라미터 조정
+/// - 이중/단일 조이스틱 제어 (가로/세로 모드)
+/// - 배터리 및 로봇 상태 모니터링
+/// - 반응형 UI (세로/가로 모드 지원)
 class ControlScreenV2 extends StatefulWidget {
+  /// @brief ControlScreenV2 생성자
+  /// @param key 위젯 키 (선택적)
   const ControlScreenV2({super.key});
 
+  /// @brief StatefulWidget의 State 생성
+  /// @return _ControlScreenV2State 인스턴스
   @override
   State<ControlScreenV2> createState() => _ControlScreenV2State();
 }
 
+/// @class _ControlScreenV2State
+/// @brief ControlScreenV2의 상태 관리 클래스
+/// @details 블루투스 서비스, PID 설정, 조이스틱 제어 로직을 구현합니다.
 class _ControlScreenV2State extends State<ControlScreenV2> {
+  /// @brief BLE 통신 서비스 인스턴스
   final BleService _bleService = BleService();
+  
+  /// @brief PID 제어 파라미터 설정
   BalancePidSettings _pidSettings = BalancePidSettings();
+  
+  /// @brief 블루투스 연결 상태
   bool _isConnected = false;
+  
+  /// @brief 로봇 활성화 상태 (균형 제어 ON/OFF)
   bool _isRobotActive = false;
+  
+  /// @brief 배터리 잔량 (0-100%)
   int _batteryLevel = 0;
 
   // 조이스틱 상태 변수들
+  /// @brief 왼쪽 조이스틱 X축 값 (-1.0 ~ 1.0)
   double _leftJoystickX = 0.0;
+  
+  /// @brief 왼쪽 조이스틱 Y축 값 (-1.0 ~ 1.0)
   double _leftJoystickY = 0.0;
+  
+  /// @brief 오른쪽 조이스틱 X축 값 (-1.0 ~ 1.0)
   double _rightJoystickX = 0.0;
+  
+  /// @brief 오른쪽 조이스틱 Y축 값 (-1.0 ~ 1.0)
   double _rightJoystickY = 0.0;
 
   // 세로 모드용 단일 조이스틱 상태
+  /// @brief 단일 조이스틱 X축 값 (세로 모드용)
   double _singleJoystickX = 0.0;
+  
+  /// @brief 단일 조이스틱 Y축 값 (세로 모드용)
   double _singleJoystickY = 0.0;
 
   // 조이스틱 설정
+  /// @brief 조이스틱 전체 크기 (픽셀)
   static const double joystickSize = 160.0;
+  
+  /// @brief 조이스틱 노브 크기 (픽셀)
   static const double knobSize = 56.0;
+  
+  /// @brief 조이스틱 최대 이동 거리
   static const double maxDistance = (joystickSize - knobSize) / 2;
 
   // 성능 최적화를 위한 throttling
+  /// @brief 마지막 명령 전송 시간 (성능 최적화용)
   DateTime _lastCommandTime = DateTime.now();
+  
+  /// @brief 명령 전송 간격 제한 (밀리초)
   static const _commandThrottleMs = 50;
 
+  /// @brief 위젯 초기화
+  /// @details PID 설정 로드 및 BLE 콜백 설정을 수행합니다.
   @override
   void initState() {
     super.initState();
@@ -45,6 +98,8 @@ class _ControlScreenV2State extends State<ControlScreenV2> {
     _setupBleCallbacks();
   }
 
+  /// @brief BLE 서비스 콜백 설정
+  /// @details 로봇 상태 수신 및 연결 상태 변경 콜백을 등록합니다.
   void _setupBleCallbacks() {
     _bleService.onStatusReceived = (angle, velocity, batteryLevel) {
       if (!mounted) return;

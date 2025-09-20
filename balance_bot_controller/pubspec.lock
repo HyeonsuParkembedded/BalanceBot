@@ -182,13 +182,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.2"
-  flutter_bluetooth_serial:
-    dependency: "direct main"
-    description:
-      path: "third_party/flutter_bluetooth_serial/flutter_bluetooth_serial-0.4.0"
-      relative: true
-    source: path
-    version: "0.4.0"
   flutter_driver:
     dependency: transitive
     description: flutter
