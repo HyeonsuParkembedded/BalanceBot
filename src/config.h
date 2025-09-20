@@ -25,6 +25,8 @@
 #include "driver/ledc.h"
 #include "driver/i2c.h"
 #include "driver/uart.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_cali.h"
 #else
 // Native build - mock ESP32 types
 #ifndef GPIO_NUM_T_DEFINED
@@ -45,7 +47,8 @@ typedef enum {
     UART_NUM_2 = 2,
     LEDC_CHANNEL_0 = 0,
     LEDC_CHANNEL_1 = 1,
-    LEDC_CHANNEL_2 = 2
+    LEDC_CHANNEL_2 = 2,
+    ADC1_CHANNEL_0 = 0
 } ledc_channel_t;
 #endif
 #endif
@@ -132,6 +135,21 @@ extern "C" {
  */
 #define CONFIG_SERVO_PIN                GPIO_NUM_10  ///< 서보 모터 PWM 신호 핀
 #define CONFIG_SERVO_CHANNEL            LEDC_CHANNEL_2 ///< 서보 모터 PWM 채널
+/** @} */
+
+/**
+ * @defgroup BATTERY_CONFIG 배터리 전압 측정 설정
+ * @brief 배터리 전압 모니터링용 ADC 핀 설정
+ * @{
+ */
+#define CONFIG_BATTERY_ADC_PIN          GPIO_NUM_1   ///< 배터리 전압 측정 ADC 핀 (ADC1_CH0)
+#define CONFIG_BATTERY_ADC_CHANNEL      ADC1_CHANNEL_0 ///< ADC 채널 번호
+#define CONFIG_BATTERY_R1_KOHM          10.0f        ///< 전압분배 상단 저항 (kΩ)
+#define CONFIG_BATTERY_R2_KOHM          3.3f         ///< 전압분배 하단 저항 (kΩ)
+#define CONFIG_BATTERY_MAX_VOLTAGE      8.4f         ///< 배터리 최대 전압 (V) - 2S 리튬 완충
+#define CONFIG_BATTERY_MIN_VOLTAGE      6.0f         ///< 배터리 최소 전압 (V) - 2S 리튬 방전 컷오프
+#define CONFIG_BATTERY_LOW_THRESHOLD    6.8f         ///< 저전압 경고 임계값 (V)
+#define CONFIG_BATTERY_CRITICAL_THRESHOLD 6.4f       ///< 위험 전압 임계값 (V)
 /** @} */
 
 /** @} */ // HARDWARE_CONFIG

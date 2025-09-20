@@ -17,7 +17,7 @@
  * - balance_task: PID 제어 및 모터 제어 (50Hz)
  * - status_task: 상태 모니터링 및 BLE 통신 (1Hz)
  * 
- * @author BalanceBot Team
+ * @author Hyeonsu Park, Suyong Kim
  * @date 2025-09-20
  * @version 1.0
  */
@@ -755,7 +755,7 @@ static void set_robot_velocity(float velocity) {
  * 
  * @return bool 밸런싱 활성화 여부 (true: 활성, false: 비활성)
  */
-static bool get_balancing_enabled(void) {
+static bool __attribute__((unused)) get_balancing_enabled(void) {
     bool enabled = false;
     if (xSemaphoreTake(data_mutex, portMAX_DELAY) == pdTRUE) {
         enabled = balancing_enabled;
